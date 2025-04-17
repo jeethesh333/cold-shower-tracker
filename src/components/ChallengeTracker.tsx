@@ -1063,16 +1063,17 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
 
           {sortedNotes.length > 0 && (
             <Box 
-              display={{ base: "none", lg: "block" }}
-              position="sticky"
+              display={{ base: "block", md: "block", lg: "block" }}
+              position={{ base: "relative", lg: "sticky" }}
               top={4}
               height="fit-content"
-              maxHeight="calc(100vh - 2rem)"
+              maxHeight={{ base: "400px", lg: "calc(100vh - 2rem)" }}
               overflowY="auto"
               bg="whiteAlpha.200"
               backdropFilter="blur(8px)"
               borderRadius="xl"
               boxShadow="md"
+              mt={{ base: 4, lg: 0 }}
               sx={{
                 '&::-webkit-scrollbar': {
                   width: '6px',
@@ -1155,16 +1156,17 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
 
           {sortedNotes.length === 0 && (
             <Box 
-              display={{ base: "none", lg: "block" }}
-              position="sticky"
+              display={{ base: "block", md: "block", lg: "block" }}
+              position={{ base: "relative", lg: "sticky" }}
               top={4}
               height="fit-content"
-              maxHeight="calc(100vh - 2rem)"
+              maxHeight={{ base: "400px", lg: "calc(100vh - 2rem)" }}
               overflowY="auto"
               bg="whiteAlpha.200"
               backdropFilter="blur(8px)"
               borderRadius="xl"
               boxShadow="md"
+              mt={{ base: 4, lg: 0 }}
               sx={{
                 '&::-webkit-scrollbar': {
                   width: '6px',
@@ -1466,10 +1468,11 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
             left: 0,
             width: '100%',
             height: '100%',
-            zIndex: 1,
+            zIndex: 0,
             pointerEvents: 'none',
-            animation: 'fall 20s ease infinite alternate',
+            animation: 'fall 20s linear infinite',
             opacity: 0.7,
+            willChange: 'transform',
           },
           '@keyframes fall': {
             '0%': { transform: 'translateY(-10%) translateX(0)' },
@@ -1486,6 +1489,8 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
             left: `${Math.random() * 100}vw`,
             fontSize: `${Math.random() * 20 + 20}px`,
             animationDelay: `${Math.random() * 10}s`,
+            position: 'fixed',
+            pointerEvents: 'none',
           }}
         >
           ❄️

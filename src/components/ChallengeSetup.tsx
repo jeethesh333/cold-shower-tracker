@@ -120,7 +120,7 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
                   fontWeight="extrabold"
                   textShadow="0 1px 5px rgba(0,0,0,0.2)"
                 >
-                  ❄️Cold Shower Challenge
+                  ❄️ Cold Shower Challenge
                 </Heading>
                 <Text 
                   fontSize={{ base: "md", sm: "lg", md: "xl" }}
@@ -130,7 +130,7 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
                   textShadow="0 2px 4px rgba(0,0,0,0.2)"
                   lineHeight="1.5"
                 >
-                  Let's do this!
+                  Ready to roll?
                 </Text>
               </Box>
 
