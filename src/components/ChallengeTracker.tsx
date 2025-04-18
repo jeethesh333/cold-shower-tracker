@@ -83,16 +83,10 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
     height: window.innerHeight,
   })
   const [note, setNote] = useState('')
-  const [editingNote, setEditingNote] = useState<SessionNote | null>(null)
   const { 
     isOpen: isPastDateOpen, 
     onOpen: onPastDateOpen,
     onClose: onPastDateClose 
-  } = useDisclosure()
-  const {
-    isOpen,
-    onOpen,
-    onClose
   } = useDisclosure()
   const toast = useToast()
   const [selectedPastDate, setSelectedPastDate] = useState('')
@@ -474,11 +468,6 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   const sortedNotes = [...challengeData.notes].sort((prev: SessionNote, next: SessionNote) => {
     return parseISO(next.date).getTime() - parseISO(prev.date).getTime();
   })
-
-  const handlePastDateClose = () => {
-    setSelectedPastDate('')
-    onPastDateClose()
-  }
 
   return (
     <Box
