@@ -1,4 +1,4 @@
-import { Box, IconButton, Menu, MenuButton, MenuList, MenuItem, HStack, Text, useToast, Progress, Spinner, Flex, Tooltip } from '@chakra-ui/react'
+import { Box, IconButton, Menu, MenuButton, MenuList, MenuItem, HStack, Text, Progress, Spinner, Flex } from '@chakra-ui/react'
 import { FaMusic, FaPlay, FaPause } from 'react-icons/fa'
 import { useState, useRef, useEffect, useCallback } from 'react'
 
@@ -42,7 +42,6 @@ const MusicPlayer = () => {
   const [progress, setProgress] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState<number>(0)
-  const [duration, setDuration] = useState<number>(0)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [previewTime, setPreviewTime] = useState<number | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState<number>(0)
@@ -59,31 +58,26 @@ const MusicPlayer = () => {
     const nextIndex = (currentIndex + 1) % audioTracks.length;
     const nextTrack = audioTracks[nextIndex];
 
-    // Reset the last played position for both the completed track and the next track
     setLastPlayedPositions(prev => {
       const newPositions = { ...prev };
-      delete newPositions[playingTrack]; // Remove the last position for completed track
-      delete newPositions[nextTrack.path]; // Remove the last position for next track
+      delete newPositions[playingTrack];
+      delete newPositions[nextTrack.path];
       return newPositions;
     });
 
-    // Create a modified version of handlePlayPause for the next track
     const playFromBeginning = async (track: AudioTrack) => {
       try {
         setIsLoading(track.path)
         setSelectedTrack(track.path)
         
-        // Create new audio instance
         const audio = new Audio(track.path)
         
-        // Wait for the audio to be loaded before playing
         await new Promise((resolve, reject) => {
           audio.addEventListener('canplaythrough', () => {
             setTrackDurations(prev => ({
               ...prev,
               [track.path]: audio.duration
             }))
-            setDuration(audio.duration)
             resolve(null)
           })
           audio.addEventListener('error', (e) => {
@@ -93,7 +87,6 @@ const MusicPlayer = () => {
           audio.load()
         })
 
-        // Always start from beginning for next track
         audio.currentTime = 0
         setCurrentTime(0)
         setProgress(0)
@@ -109,14 +102,12 @@ const MusicPlayer = () => {
         setPlayingTrack(null)
         setProgress(0)
         setCurrentTime(0)
-        setDuration(0)
         setIsLoading(null)
       }
     }
 
-    // Play next track from beginning
     playFromBeginning(nextTrack);
-  }, [playingTrack, setIsLoading, setSelectedTrack, setTrackDurations, setDuration, setCurrentTime, setProgress, setPlayingTrack]);
+  }, [playingTrack]);
 
   useEffect(() => {
     const updateProgress = () => {
@@ -124,16 +115,14 @@ const MusicPlayer = () => {
         const percentage = (audioRef.current.currentTime / audioRef.current.duration) * 100
         setProgress(percentage)
         setCurrentTime(audioRef.current.currentTime)
-        setDuration(audioRef.current.duration)
       }
     }
 
     const handleTrackEnd = () => {
-      // Reset the current track's position when it ends
       if (playingTrack) {
         setLastPlayedPositions(prev => {
           const newPositions = { ...prev };
-          delete newPositions[playingTrack]; // Remove the last position when track ends
+          delete newPositions[playingTrack];
           return newPositions;
         });
       }
@@ -143,7 +132,12 @@ const MusicPlayer = () => {
     if (audioRef.current) {
       audioRef.current.addEventListener('timeupdate', updateProgress)
       audioRef.current.addEventListener('loadedmetadata', () => {
-        setDuration(audioRef.current?.duration || 0)
+        if (audioRef.current) {
+          setTrackDurations(prev => ({
+            ...prev,
+            [playingTrack!]: audioRef.current!.duration
+          }))
+        }
       })
       audioRef.current.addEventListener('ended', handleTrackEnd)
     }
@@ -154,7 +148,7 @@ const MusicPlayer = () => {
         audioRef.current.removeEventListener('ended', handleTrackEnd)
       }
     }
-  }, [playingTrack, playNextTrack])
+  }, [playingTrack, playNextTrack]);
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>, trackPath: string) => {
     if (!progressBarRef.current) return
@@ -201,7 +195,6 @@ const MusicPlayer = () => {
 
   const handlePlayPause = async (track: AudioTrack) => {
     if (playingTrack === track.path) {
-      // If this track is currently playing, pause it and store its position
       if (audioRef.current) {
         const currentPosition = audioRef.current.currentTime
         setLastPlayedPositions(prev => ({
@@ -214,7 +207,6 @@ const MusicPlayer = () => {
       setPlayingTrack(null)
       setSelectedTrack(track.path)
     } else {
-      // If a different track is playing, stop it first
       if (audioRef.current) {
         const currentPosition = audioRef.current.currentTime
         setLastPlayedPositions(prev => ({
@@ -230,17 +222,14 @@ const MusicPlayer = () => {
         setIsLoading(track.path)
         setSelectedTrack(track.path)
         
-        // Create new audio instance
         const audio = new Audio(track.path)
         
-        // Wait for the audio to be loaded before playing
         await new Promise((resolve, reject) => {
           audio.addEventListener('canplaythrough', () => {
             setTrackDurations(prev => ({
               ...prev,
               [track.path]: audio.duration
             }))
-            setDuration(audio.duration)
             resolve(null)
           })
           audio.addEventListener('error', (e) => {
@@ -250,7 +239,6 @@ const MusicPlayer = () => {
           audio.load()
         })
 
-        // Set the current time to the last played position if it exists
         const lastPosition = lastPlayedPositions[track.path]
         if (lastPosition) {
           audio.currentTime = lastPosition
@@ -272,14 +260,12 @@ const MusicPlayer = () => {
         setPlayingTrack(null)
         setProgress(0)
         setCurrentTime(0)
-        setDuration(0)
         setIsLoading(null)
       }
     }
   }
 
   const handleMenuItemClick = (e: React.MouseEvent) => {
-    // Prevent the menu from closing when clicking inside menu items
     e.stopPropagation()
   }
 
