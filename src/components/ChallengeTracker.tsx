@@ -84,13 +84,19 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   })
   const [note, setNote] = useState('')
   const [editingNote, setEditingNote] = useState<SessionNote | null>(null)
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const { 
+    isOpen: isPastDateOpen, 
+    onOpen: onPastDateOpen,
+    onClose: onPastDateClose 
+  } = useDisclosure()
+  const {
+    isOpen,
+    onOpen,
+    onClose
+  } = useDisclosure()
   const toast = useToast()
   const [selectedPastDate, setSelectedPastDate] = useState('')
   const [pastDateNote, setPastDateNote] = useState('')
-  const { isOpen: isPastDateOpen, onOpen: onPastDateOpen, onClose: onPastDateClose } = useDisclosure()
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [dateToDelete, setDateToDelete] = useState<string | null>(null)
   const [showResetModal, setShowResetModal] = useState(false)
   const [isNoteSaved, setIsNoteSaved] = useState(false)
   const [showDurationModal, setShowDurationModal] = useState(false)
@@ -286,7 +292,6 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   const handleSaveEdit = () => {
     if (!selectedDate) return
 
-    const updatedCompletedDates = challengeData.completedDates
     const updatedNotes = [...challengeData.notes]
     const noteIndex = updatedNotes.findIndex(note => note.date === selectedDate)
     
@@ -1310,84 +1315,53 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
         </Grid>
       </Box>
 
-      <Modal isOpen={isOpen && !isAnimating} onClose={onClose}>
-        <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.600" />
-        <ModalContent bg="blue.900" borderRadius="xl" mx={3}>
-          <ModalHeader bgGradient="linear(to-r, blue.400, blue.600)" color="white" borderTopRadius="xl">Edit Note</ModalHeader>
-          <ModalCloseButton color="white" />
-          <ModalBody p={5}>
-            <Text fontWeight="semibold" mb={2} color="white" letterSpacing="wide">
-              {editingNote && format(new Date(editingNote.date), 'MMMM d, yyyy')}
-            </Text>
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Edit Note</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
             <Textarea
-              value={editingNote?.note || ''}
-              onChange={(e) => setEditingNote(prev => prev ? { ...prev, note: e.target.value } : null)}
-              rows={3}
-              bg="whiteAlpha.200"
-              color="white"
-              borderColor="whiteAlpha.300"
-              borderRadius="xl"
-              _hover={{ borderColor: "whiteAlpha.400" }}
-              _focus={{ 
-                borderColor: "whiteAlpha.500",
-                boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.5)"
-              }}
-              _placeholder={{ color: "whiteAlpha.600" }}
-              fontSize={{ base: "xs", md: "sm" }}
-              resize="vertical"
+              value={editedNoteText}
+              onChange={(e) => setEditedNoteText(e.target.value)}
+              placeholder="Enter your note"
             />
           </ModalBody>
-          <ModalFooter bg="whiteAlpha.100" borderBottomRadius="xl" gap={2}>
-            <Button variant="ghost" onClick={onClose} color="white" _hover={{ bg: "whiteAlpha.200" }}>
-              Cancel
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={handleSaveEdit}>
+              Save
             </Button>
-            <Button 
-              onClick={handleSaveEdit}
-              bgGradient="linear(to-r, blue.400, blue.600)"
-              color="white"
-              _hover={{
-                bgGradient: "linear(to-r, blue.500, blue.700)",
-              }}
-              _active={{
-                bgGradient: "linear(to-r, blue.600, blue.800)",
-              }}
-            >
-              Save Changes
+            <Button variant="ghost" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
             </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
-      <Modal isOpen={showDeleteModal && !isAnimating} onClose={() => setShowDeleteModal(false)}>
-        <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.600" />
-        <ModalContent bg="blue.900" borderRadius="xl" mx={3}>
-          <ModalHeader color="red.400" borderTopRadius="xl">Remove Logged Date</ModalHeader>
-          <ModalCloseButton color="white" />
-          <ModalBody p={5}>
-            <Text color="white" fontSize="sm" letterSpacing="wide">
-              Are you sure you want to remove{' '}
-              <Text as="span" fontWeight="semibold">
-                {dateToDelete && format(parseISO(dateToDelete + 'T00:00:00'), 'MMMM d, yyyy')}
-              </Text>?
-              This will also remove any associated notes.
-            </Text>
-          </ModalBody>
-          <ModalFooter bg="whiteAlpha.100" borderBottomRadius="xl" gap={2}>
-            <Button variant="ghost" onClick={() => setShowDeleteModal(false)} color="white" _hover={{ bg: "whiteAlpha.200" }}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={confirmDelete}
-              bg="red.500"
-              color="white"
-              _hover={{ bg: "red.600" }}
-              _active={{ bg: "red.700" }}
-            >
-              Remove Date
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <AlertDialog
+        isOpen={isDeleteAlertOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={() => setIsDeleteAlertOpen(false)}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Delete Entry
+            </AlertDialogHeader>
+            <AlertDialogBody>
+              Are you sure you want to delete this entry? This action cannot be undone.
+            </AlertDialogBody>
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={() => setIsDeleteAlertOpen(false)}>
+                Cancel
+              </Button>
+              <Button colorScheme="red" onClick={confirmDelete} ml={3}>
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
 
       <Modal isOpen={showResetModal && !isAnimating} onClose={() => setShowResetModal(false)}>
         <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.600" />
@@ -1557,54 +1531,6 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
           </ModalFooter>
         </ModalContent>
       </Modal>
-
-      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Edit Note</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Textarea
-              value={editedNoteText}
-              onChange={(e) => setEditedNoteText(e.target.value)}
-              placeholder="Enter your note"
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={handleSaveEdit}>
-              Save
-            </Button>
-            <Button variant="ghost" onClick={() => setIsEditModalOpen(false)}>
-              Cancel
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      <AlertDialog
-        isOpen={isDeleteAlertOpen}
-        leastDestructiveRef={cancelRef}
-        onClose={() => setIsDeleteAlertOpen(false)}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              Delete Entry
-            </AlertDialogHeader>
-            <AlertDialogBody>
-              Are you sure you want to delete this entry? This action cannot be undone.
-            </AlertDialogBody>
-            <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={() => setIsDeleteAlertOpen(false)}>
-                Cancel
-              </Button>
-              <Button colorScheme="red" onClick={confirmDelete} ml={3}>
-                Delete
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
     </Box>
   )
 }
