@@ -28,10 +28,16 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-  Switch
+  Switch,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
 } from '@chakra-ui/react'
 import { Global as EmotionGlobal } from '@emotion/react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import ReactConfetti from 'react-confetti'
 import { differenceInDays, format, isAfter, isBefore, parseISO } from 'date-fns'
 import { DeleteIcon, EditIcon, CheckIcon, CalendarIcon, SettingsIcon } from '@chakra-ui/icons'
@@ -90,6 +96,11 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   const [showDurationModal, setShowDurationModal] = useState(false)
   const [newDuration, setNewDuration] = useState(challengeData.totalDays)
   const [isAnimating, setIsAnimating] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [editedNoteText, setEditedNoteText] = useState('')
+  const cancelRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const handleResize = () => {
@@ -266,31 +277,70 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
     setNote('')
   }
 
-  const handleEditNote = (noteToEdit: SessionNote) => {
-    setEditingNote(noteToEdit)
-    onOpen()
+  const handleEditNote = (date: string, note: string) => {
+    setSelectedDate(date)
+    setEditedNoteText(note)
+    setIsEditModalOpen(true)
   }
 
   const handleSaveEdit = () => {
-    if (!editingNote) return
+    if (!selectedDate) return
 
-    const updatedNotes = challengeData.notes.map(n => 
-      n.date === editingNote.date ? editingNote : n
-    )
+    const updatedCompletedDates = challengeData.completedDates
+    const updatedNotes = [...challengeData.notes]
+    const noteIndex = updatedNotes.findIndex(note => note.date === selectedDate)
+    
+    if (noteIndex >= 0) {
+      updatedNotes[noteIndex] = { date: selectedDate, note: editedNoteText }
+    } else {
+      updatedNotes.push({ date: selectedDate, note: editedNoteText })
+    }
 
     setChallengeData({
       ...challengeData,
       notes: updatedNotes
     })
 
+    setIsEditModalOpen(false)
+    setSelectedDate(null)
+    setEditedNoteText('')
+
     toast({
       title: "Note updated",
       status: "success",
       duration: 2000,
+      isClosable: true,
+    })
+  }
+
+  const handleDeleteNote = (date: string) => {
+    setSelectedDate(date)
+    setIsDeleteAlertOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (!selectedDate) return
+
+    const updatedCompletedDates = challengeData.completedDates.filter(
+      date => date !== selectedDate
+    )
+    const updatedNotes = challengeData.notes.filter(note => note.date !== selectedDate)
+
+    setChallengeData({
+      ...challengeData,
+      completedDates: updatedCompletedDates,
+      notes: updatedNotes
     })
 
-    onClose()
-    setEditingNote(null)
+    setIsDeleteAlertOpen(false)
+    setSelectedDate(null)
+
+    toast({
+      title: "Entry deleted",
+      status: "info",
+      duration: 2000,
+      isClosable: true,
+    })
   }
 
   const handleLogPastDate = () => {
@@ -349,35 +399,6 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
     setSelectedPastDate('')
     setPastDateNote('')
     onPastDateClose()
-  }
-
-  const handleDeleteDate = (date: string) => {
-    setDateToDelete(date)
-    setShowDeleteModal(true)
-  }
-
-  const confirmDelete = () => {
-    if (!dateToDelete) return
-
-    const updatedCompletedDates = challengeData.completedDates.filter(d => d !== dateToDelete)
-    const updatedNotes = challengeData.notes.filter(n => n.date !== dateToDelete)
-
-    setChallengeData({
-      ...challengeData,
-      completedDates: updatedCompletedDates,
-      notes: updatedNotes
-    })
-
-    toast({
-      title: "Date removed",
-      description: `Successfully removed ${format(parseISO(dateToDelete + 'T00:00:00'), 'MMMM d, yyyy')}`,
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    })
-
-    setShowDeleteModal(false)
-    setDateToDelete(null)
   }
 
   const handleResetClick = () => {
@@ -448,6 +469,11 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   const sortedNotes = [...challengeData.notes].sort((prev: SessionNote, next: SessionNote) => {
     return parseISO(next.date).getTime() - parseISO(prev.date).getTime();
   })
+
+  const handlePastDateClose = () => {
+    setSelectedPastDate('')
+    onPastDateClose()
+  }
 
   return (
     <Box
@@ -978,7 +1004,11 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
               </Grid>
             </Box>
 
-            <ChallengeGrid challengeData={challengeData} />
+            <ChallengeGrid 
+              challengeData={challengeData}
+              onEditNote={handleEditNote}
+              onDeleteDate={handleDeleteNote}
+            />
 
             <Box 
               width="100%" 
@@ -1212,7 +1242,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                             icon={<EditIcon />}
                             aria-label="Edit note"
                             size="sm"
-                            onClick={() => handleEditNote(note)}
+                            onClick={() => handleEditNote(note.date, note.note)}
                             variant="ghost"
                             color="white"
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -1223,7 +1253,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                             icon={<DeleteIcon />}
                             aria-label="Remove date"
                             size="sm"
-                            onClick={() => handleDeleteDate(note.date)}
+                            onClick={() => handleDeleteNote(note.date)}
                             variant="ghost"
                             color="white"
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -1527,6 +1557,54 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Edit Note</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Textarea
+              value={editedNoteText}
+              onChange={(e) => setEditedNoteText(e.target.value)}
+              placeholder="Enter your note"
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={handleSaveEdit}>
+              Save
+            </Button>
+            <Button variant="ghost" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <AlertDialog
+        isOpen={isDeleteAlertOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={() => setIsDeleteAlertOpen(false)}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Delete Entry
+            </AlertDialogHeader>
+            <AlertDialogBody>
+              Are you sure you want to delete this entry? This action cannot be undone.
+            </AlertDialogBody>
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={() => setIsDeleteAlertOpen(false)}>
+                Cancel
+              </Button>
+              <Button colorScheme="red" onClick={confirmDelete} ml={3}>
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Box>
   )
 }

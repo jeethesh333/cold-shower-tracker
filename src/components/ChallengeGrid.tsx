@@ -1,78 +1,59 @@
-import { Box, Grid, Tooltip, Text } from '@chakra-ui/react'
+import { Box, Grid, Text, Tooltip, IconButton, Menu, MenuButton, MenuList, MenuItem, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, Button, Textarea } from '@chakra-ui/react'
 import { format, parseISO } from 'date-fns'
+import { DeleteIcon, EditIcon, HamburgerIcon } from '@chakra-ui/icons'
+import { useState } from 'react'
 import { ChallengeData } from '../types'
-import { Global as EmotionGlobal } from '@emotion/react'
 
 interface ChallengeGridProps {
   challengeData: ChallengeData;
+  onEditNote?: (date: string, note: string) => void;
+  onDeleteDate?: (date: string) => void;
 }
 
-const ChallengeGrid = ({ challengeData }: ChallengeGridProps) => {
-  const getDateForDay = (day: number): string => {
-    const startDate = new Date(challengeData.startDate);
-    const date = new Date(startDate);
-    date.setDate(startDate.getDate() + day - 1);
-    return date.toISOString().split('T')[0];
-  };
-
-  const getNoteForDate = (date: string): string | undefined => {
-    const note = challengeData.notes.find(n => n.date === date);
-    return note?.note;
-  };
+const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGridProps) => {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [editNote, setEditNote] = useState('')
+  const { isOpen, onOpen, onClose } = useDisclosure()
 
   const getOptimalColumns = (totalDays: number): number => {
-    // Calculate square root as a starting point
-    const sqrt = Math.sqrt(totalDays);
-    
-    // Try to find factors of totalDays that give us more columns than rows
-    const factors: number[] = [];
-    for (let i = 1; i <= totalDays; i++) {
-      if (totalDays % i === 0) {
-        factors.push(i);
-      }
+    if (totalDays <= 7) return totalDays
+    if (totalDays <= 14) return 7
+    if (totalDays <= 28) return 7
+    if (totalDays <= 31) return 7
+    return 7
+  }
+
+  const handleEditClick = (date: string) => {
+    const note = challengeData.notes.find(n => n.date === date)?.note || ''
+    setSelectedDate(date)
+    setEditNote(note)
+    onOpen()
+  }
+
+  const handleSaveNote = () => {
+    if (selectedDate && onEditNote) {
+      onEditNote(selectedDate, editNote)
     }
+    onClose()
+  }
 
-    // Find the factor pair that gives us the most columns while keeping rows reasonable
-    let bestColumns = Math.min(Math.ceil(sqrt * 1.5), 12); // Default to slightly wider than square
-    
-    for (let i = 0; i < factors.length; i++) {
-      const cols = factors[i];
-      const rows = totalDays / cols;
-      
-      // We want more columns than rows, but not too many
-      if (cols >= rows && cols <= 12 && rows >= 3) {
-        bestColumns = cols;
-        break;
-      }
+  const handleDeleteClick = (date: string) => {
+    if (onDeleteDate) {
+      onDeleteDate(date)
     }
+  }
 
-    // If no perfect factor found, find best fit that gives us more columns
-    if (!factors.includes(bestColumns)) {
-      // Try numbers from sqrt*1.5 down to 5
-      const maxCols = Math.min(Math.ceil(sqrt * 1.5), 12);
-      for (let cols = maxCols; cols >= 5; cols--) {
-        const rows = Math.ceil(totalDays / cols);
-        if (cols >= rows) {
-          bestColumns = cols;
-          break;
-        }
-      }
-    }
-
-    return bestColumns;
-  };
-
-  const columns = getOptimalColumns(challengeData.totalDays);
+  const columns = getOptimalColumns(challengeData.totalDays)
 
   return (
     <Box
-      position="relative"
       width="100%"
-      p={4}
-      borderRadius="2xl"
-      bg="rgba(15, 23, 42, 0.7)"
-      backdropFilter="blur(10px)"
-      boxShadow="0 4px 30px rgba(0, 0, 0, 0.1)"
+      bg="whiteAlpha.100"
+      backdropFilter="blur(8px)"
+      p={{ base: 4, md: 5 }}
+      borderRadius="xl"
+      boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+      position="relative"
       overflow="hidden"
       _before={{
         content: '""',
@@ -81,127 +62,153 @@ const ChallengeGrid = ({ challengeData }: ChallengeGridProps) => {
         left: 0,
         right: 0,
         bottom: 0,
-        background: "linear-gradient(-45deg, rgba(56, 189, 248, 0.1), rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1))",
-        backgroundSize: "400% 400%",
-        animation: "waterFlow 15s ease infinite",
-        opacity: 0.5,
-        zIndex: 0
+        bgGradient: "linear(to-br, whiteAlpha.100, transparent)",
+        opacity: 0,
+        transition: "opacity 0.3s"
+      }}
+      _hover={{
+        _before: {
+          opacity: 1
+        }
       }}
     >
       <Grid
         templateColumns={`repeat(${columns}, 1fr)`}
         gap={2}
-        position="relative"
-        zIndex={1}
       >
         {Array.from({ length: challengeData.totalDays }).map((_, index) => {
-          const currentDate = getDateForDay(index + 1);
-          const isCompleted = challengeData.completedDates.includes(currentDate);
-          const note = getNoteForDate(currentDate);
-          const dayNumber = index + 1;
+          const dayNumber = index + 1
+          const isCompleted = challengeData.completedDates.some(date => {
+            const dayOfChallenge = Math.floor((new Date(date).getTime() - new Date(challengeData.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1
+            return dayOfChallenge === dayNumber
+          })
+
+          const completedDate = challengeData.completedDates.find(date => {
+            const dayOfChallenge = Math.floor((new Date(date).getTime() - new Date(challengeData.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1
+            return dayOfChallenge === dayNumber
+          })
+
+          const note = completedDate ? challengeData.notes.find(n => n.date === completedDate)?.note : null
 
           return (
-            <Tooltip
+            <Box
               key={index}
-              label={`Day ${dayNumber} - ${format(parseISO(currentDate), 'MMMM d, yyyy')}${note ? `\n${note}` : ''}`}
-              hasArrow
-              bg="rgba(15, 23, 42, 0.95)"
-              color="white"
-              borderRadius="md"
-              px={3}
-              py={2}
+              bg={isCompleted ? "blue.500" : "whiteAlpha.100"}
+              borderRadius="lg"
+              p={2}
+              textAlign="center"
+              position="relative"
+              transition="all 0.2s"
+              _hover={{
+                transform: isCompleted ? "scale(1.05)" : "none",
+                bg: isCompleted ? "blue.400" : "whiteAlpha.200"
+              }}
             >
-              <Box
-                width="100%"
-                paddingBottom="100%"
-                position="relative"
-                role="group"
-              >
-                <Box
-                  position="absolute"
-                  top={0}
-                  left={0}
-                  right={0}
-                  bottom={0}
-                  bg={isCompleted ? "transparent" : "rgba(148, 163, 184, 0.1)"}
-                  borderRadius="lg"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  transition="all 0.3s"
-                  overflow="hidden"
-                  sx={{
-                    ...(isCompleted && {
-                      background: 'linear-gradient(-45deg, #0ea5e9, #3b82f6, #6366f1, #8b5cf6)',
-                      backgroundSize: '300% 300%',
-                      animation: 'waterFlow 8s ease infinite'
-                    }),
-                    '&::after': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'radial-gradient(circle at center, transparent 30%, rgba(226, 232, 240, 0.3) 70%, transparent 100%)',
-                      opacity: 0,
-                      transform: 'scale(0.5)',
-                      transition: 'all 0.3s',
-                      animation: isCompleted ? 'waterRipple 3s ease-in-out infinite' : 'none'
-                    }
-                  }}
-                  _hover={{
-                    transform: 'scale(1.05)',
-                    boxShadow: '0 4px 20px rgba(148, 163, 184, 0.2)'
-                  }}
+              {isCompleted ? (
+                <Tooltip 
+                  label={note ? `${format(parseISO(completedDate!), 'MMM d, yyyy')}\n${note}` : format(parseISO(completedDate!), 'MMM d, yyyy')}
+                  placement="top"
+                  hasArrow
                 >
-                  <Text
-                    color={isCompleted ? "white" : "gray.400"}
-                    fontSize={{ base: "sm", md: "md" }}
-                    fontWeight="semibold"
-                    zIndex={1}
-                    textShadow="0 2px 4px rgba(0,0,0,0.3)"
-                  >
-                    {dayNumber}
-                  </Text>
-                </Box>
-              </Box>
-            </Tooltip>
-          );
+                  <Box position="relative">
+                    <Text fontWeight="bold">{dayNumber}</Text>
+                    <Menu>
+                      <MenuButton
+                        as={IconButton}
+                        icon={<HamburgerIcon />}
+                        variant="ghost"
+                        size="xs"
+                        position="absolute"
+                        top={-1}
+                        right={-1}
+                        color="white"
+                        _hover={{ bg: "whiteAlpha.300" }}
+                      />
+                      <MenuList bg="blue.800" borderColor="whiteAlpha.200">
+                        <MenuItem
+                          icon={<EditIcon />}
+                          onClick={() => handleEditClick(completedDate!)}
+                          bg="transparent"
+                          _hover={{ bg: "whiteAlpha.200" }}
+                        >
+                          Edit Note
+                        </MenuItem>
+                        <MenuItem
+                          icon={<DeleteIcon />}
+                          onClick={() => handleDeleteClick(completedDate!)}
+                          bg="transparent"
+                          _hover={{ bg: "whiteAlpha.200" }}
+                          color="red.300"
+                        >
+                          Remove Day
+                        </MenuItem>
+                      </MenuList>
+                    </Menu>
+                  </Box>
+                </Tooltip>
+              ) : (
+                <Text 
+                  color="whiteAlpha.600" 
+                  fontWeight="medium"
+                >
+                  {dayNumber}
+                </Text>
+              )}
+            </Box>
+          )
         })}
       </Grid>
 
-      <EmotionGlobal
-        styles={{
-          '@keyframes waterFlow': {
-            '0%': {
-              backgroundPosition: '0% 50%'
-            },
-            '50%': {
-              backgroundPosition: '100% 50%'
-            },
-            '100%': {
-              backgroundPosition: '0% 50%'
-            }
-          },
-          '@keyframes waterRipple': {
-            '0%': {
-              opacity: 0,
-              transform: 'scale(0.5)'
-            },
-            '50%': {
-              opacity: 0.3,
-              transform: 'scale(1)'
-            },
-            '100%': {
-              opacity: 0,
-              transform: 'scale(0.5)'
-            }
-          }
-        }}
-      />
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.600" />
+        <ModalContent bg="blue.900" borderRadius="xl" mx={3}>
+          <ModalHeader bgGradient="linear(to-r, blue.400, blue.600)" color="white" borderTopRadius="xl">
+            Edit Note
+          </ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody p={5}>
+            <Text fontWeight="semibold" mb={2} color="white" letterSpacing="wide">
+              {selectedDate && format(parseISO(selectedDate), 'MMMM d, yyyy')}
+            </Text>
+            <Textarea
+              value={editNote}
+              onChange={(e) => setEditNote(e.target.value)}
+              bg="whiteAlpha.200"
+              color="white"
+              borderColor="whiteAlpha.300"
+              borderRadius="xl"
+              _hover={{ borderColor: "whiteAlpha.400" }}
+              _focus={{ 
+                borderColor: "whiteAlpha.500",
+                boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.5)"
+              }}
+              _placeholder={{ color: "whiteAlpha.600" }}
+              fontSize={{ base: "xs", md: "sm" }}
+              resize="vertical"
+            />
+          </ModalBody>
+          <ModalFooter bg="whiteAlpha.100" borderBottomRadius="xl" gap={2}>
+            <Button variant="ghost" onClick={onClose} color="white" _hover={{ bg: "whiteAlpha.200" }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveNote}
+              bgGradient="linear(to-r, blue.400, blue.600)"
+              color="white"
+              _hover={{
+                bgGradient: "linear(to-r, blue.500, blue.700)",
+              }}
+              _active={{
+                bgGradient: "linear(to-r, blue.600, blue.800)",
+              }}
+            >
+              Save Changes
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
-  );
-};
+  )
+}
 
-export default ChallengeGrid; 
+export default ChallengeGrid 
