@@ -10,7 +10,6 @@ import {
   Avatar,
   useToast,
   Spinner,
-  Tooltip,
   Button,
   useDisclosure,
   Modal,
@@ -19,7 +18,6 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  ModalCloseButton,
 } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
 import { FaRobot, FaPaperPlane } from 'react-icons/fa';

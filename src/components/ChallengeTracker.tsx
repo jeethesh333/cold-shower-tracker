@@ -135,10 +135,10 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [editedNoteText, setEditedNoteText] = useState('')
   const cancelRef = useRef<HTMLButtonElement>(null)
-  const [userName, setUserName] = useState<string>(() => {
-    const savedName = localStorage.getItem('userName');
-    return savedName || 'User';
-  })
+  const [userName] = useState(() => {
+    const saved = localStorage.getItem('userName');
+    return saved || 'User';
+  });
 
   useEffect(() => {
     const handleResize = () => {
