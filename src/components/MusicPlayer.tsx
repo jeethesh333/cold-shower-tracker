@@ -159,14 +159,12 @@ const MusicPlayer = () => {
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>, trackPath: string) => {
     if (!progressBarRef.current) return
 
-    const progressBar = progressBarRef.current
     const rect = progressBarRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
     const percentage = (x / rect.width) * 100
     const trackDuration = trackDurations[trackPath] || 0
     const newTime = (percentage / 100) * trackDuration
 
-    // Update the current time and progress
     setCurrentTime(newTime)
     setProgress(percentage)
     setLastPlayedPositions(prev => ({
@@ -174,7 +172,6 @@ const MusicPlayer = () => {
       [trackPath]: newTime
     }))
 
-    // If audio is playing, update its current time
     if (audioRef.current && playingTrack === trackPath) {
       audioRef.current.currentTime = newTime
     }
@@ -183,8 +180,7 @@ const MusicPlayer = () => {
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, trackPath: string) => {
     if (!progressBarRef.current) return
 
-    const progressBar = progressBarRef.current
-    const rect = progressBar.getBoundingClientRect()
+    const rect = progressBarRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
     const percentage = (x / rect.width) * 100
     const trackDuration = trackDurations[trackPath] || 0
