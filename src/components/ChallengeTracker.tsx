@@ -1219,7 +1219,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                       boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
                     >
                       <Grid templateColumns="1fr auto" gap={3} alignItems="start">
-                        <Box>
+                        <Box flex="1" minW="0">
                           <Text 
                             fontWeight="semibold" 
                             color="white"
@@ -1229,9 +1229,9 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                           >
                             {format(parseISO(note.date + 'T00:00:00'), 'MMMM d, yyyy')}
                           </Text>
-                          <Text color="whiteAlpha.900" fontSize="xs">{note.note}</Text>
+                          <Text color="whiteAlpha.900" fontSize="xs" wordBreak="break-word">{note.note}</Text>
                         </Box>
-                        <Flex gap={2}>
+                        <Flex gap={2} flexShrink={0}>
                           <IconButton
                             icon={<EditIcon />}
                             aria-label="Edit note"
@@ -1305,23 +1305,48 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
       </Box>
 
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Edit Note</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
+        <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.600" />
+        <ModalContent bg="blue.900" borderRadius="xl" mx={3}>
+          <ModalHeader bgGradient="linear(to-r, blue.400, blue.600)" color="white" borderTopRadius="xl">Edit Note</ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody p={5}>
+            <Text fontWeight="semibold" mb={2} color="white" letterSpacing="wide">
+              {selectedDate && format(parseISO(selectedDate), 'MMMM d, yyyy')}
+            </Text>
             <Textarea
               value={editedNoteText}
               onChange={(e) => setEditedNoteText(e.target.value)}
               placeholder="Enter your note"
+              bg="whiteAlpha.200"
+              color="white"
+              borderColor="whiteAlpha.300"
+              borderRadius="xl"
+              _hover={{ borderColor: "whiteAlpha.400" }}
+              _focus={{ 
+                borderColor: "whiteAlpha.500",
+                boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.5)"
+              }}
+              _placeholder={{ color: "whiteAlpha.600" }}
+              fontSize={{ base: "xs", md: "sm" }}
+              resize="vertical"
             />
           </ModalBody>
-          <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={handleSaveEdit}>
-              Save
-            </Button>
-            <Button variant="ghost" onClick={() => setIsEditModalOpen(false)}>
+          <ModalFooter bg="whiteAlpha.100" borderBottomRadius="xl" gap={2}>
+            <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} color="white" _hover={{ bg: "whiteAlpha.200" }}>
               Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveEdit}
+              bgGradient="linear(to-r, blue.400, blue.600)"
+              color="white"
+              _hover={{
+                bgGradient: "linear(to-r, blue.500, blue.700)",
+              }}
+              _active={{
+                bgGradient: "linear(to-r, blue.600, blue.800)",
+              }}
+            >
+              Save Changes
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -1332,19 +1357,55 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
         leastDestructiveRef={cancelRef}
         onClose={() => setIsDeleteAlertOpen(false)}
       >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+        <AlertDialogOverlay backdropFilter="blur(2px)" bg="blackAlpha.600">
+          <AlertDialogContent
+            bg="rgba(30, 64, 110, 0.45)"
+            borderRadius="xl"
+            borderColor="whiteAlpha.200"
+            borderWidth="1px"
+            boxShadow="0 8px 32px rgba(0, 0, 0, 0.2)"
+            backdropFilter="blur(2px)"
+            sx={{
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                borderRadius: 'xl',
+                background: 'linear-gradient(135deg, rgba(66, 153, 225, 0.08), rgba(49, 130, 206, 0.03))',
+                pointerEvents: 'none'
+              }
+            }}
+          >
+            <AlertDialogHeader fontSize="lg" fontWeight="bold" color="white">
               Delete Entry
             </AlertDialogHeader>
-            <AlertDialogBody>
+            <AlertDialogBody color="whiteAlpha.900">
               Are you sure you want to delete this entry? This action cannot be undone.
             </AlertDialogBody>
-            <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={() => setIsDeleteAlertOpen(false)}>
+            <AlertDialogFooter gap={3}>
+              <Button 
+                ref={cancelRef} 
+                onClick={() => setIsDeleteAlertOpen(false)}
+                variant="ghost"
+                color="white"
+                _hover={{ bg: "whiteAlpha.200" }}
+              >
                 Cancel
               </Button>
-              <Button colorScheme="red" onClick={confirmDelete} ml={3}>
+              <Button 
+                onClick={confirmDelete}
+                bgGradient="linear(to-r, red.500, red.600)"
+                color="white"
+                _hover={{
+                  bgGradient: "linear(to-r, red.600, red.700)",
+                }}
+                _active={{
+                  bgGradient: "linear(to-r, red.700, red.800)",
+                }}
+              >
                 Delete
               </Button>
             </AlertDialogFooter>
@@ -1353,8 +1414,29 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
       </AlertDialog>
 
       <Modal isOpen={showResetModal && !isAnimating} onClose={() => setShowResetModal(false)}>
-        <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.600" />
-        <ModalContent bg="blue.900" borderRadius="xl" mx={3}>
+        <ModalOverlay backdropFilter="blur(2px)" bg="blackAlpha.600" />
+        <ModalContent 
+          bg="rgba(30, 64, 110, 0.45)"
+          borderRadius="xl"
+          borderColor="whiteAlpha.200"
+          borderWidth="1px"
+          boxShadow="0 8px 32px rgba(0, 0, 0, 0.2)"
+          backdropFilter="blur(2px)"
+          mx={3}
+          sx={{
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              borderRadius: 'xl',
+              background: 'linear-gradient(135deg, rgba(66, 153, 225, 0.08), rgba(49, 130, 206, 0.03))',
+              pointerEvents: 'none'
+            }
+          }}
+        >
           <ModalHeader color="red.400" borderTopRadius="xl">Reset Challenge</ModalHeader>
           <ModalCloseButton color="white" />
           <ModalBody p={5}>
@@ -1365,16 +1447,20 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
               This will delete all your progress, completed dates, and notes. This action cannot be undone.
             </Text>
           </ModalBody>
-          <ModalFooter bg="whiteAlpha.100" borderBottomRadius="xl" gap={2}>
+          <ModalFooter borderBottomRadius="xl" gap={2}>
             <Button variant="ghost" onClick={() => setShowResetModal(false)} color="white" _hover={{ bg: "whiteAlpha.200" }}>
               Cancel
             </Button>
             <Button 
               onClick={confirmReset}
-              bg="red.500"
+              bgGradient="linear(to-r, red.500, red.600)"
               color="white"
-              _hover={{ bg: "red.600" }}
-              _active={{ bg: "red.700" }}
+              _hover={{
+                bgGradient: "linear(to-r, red.600, red.700)",
+              }}
+              _active={{
+                bgGradient: "linear(to-r, red.700, red.800)",
+              }}
             >
               Reset Challenge
             </Button>

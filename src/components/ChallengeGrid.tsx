@@ -1,7 +1,6 @@
-import { Box, Grid, Text, Tooltip, IconButton, Menu, MenuButton, MenuList, MenuItem, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, Button, Textarea } from '@chakra-ui/react'
+import { Box, Grid, Text, Tooltip, IconButton, Menu, MenuButton, MenuList, MenuItem, Portal } from '@chakra-ui/react'
 import { format, parseISO } from 'date-fns'
 import { DeleteIcon, EditIcon, HamburgerIcon } from '@chakra-ui/icons'
-import { useState } from 'react'
 import { ChallengeData } from '../types'
 
 interface ChallengeGridProps {
@@ -11,10 +10,6 @@ interface ChallengeGridProps {
 }
 
 const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGridProps) => {
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [editNote, setEditNote] = useState('')
-  const { isOpen, onOpen, onClose } = useDisclosure()
-
   const getOptimalColumns = (totalDays: number): number => {
     if (totalDays <= 7) return totalDays
     if (totalDays <= 14) return 7
@@ -25,16 +20,9 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
 
   const handleEditClick = (date: string) => {
     const note = challengeData.notes.find(n => n.date === date)?.note || ''
-    setSelectedDate(date)
-    setEditNote(note)
-    onOpen()
-  }
-
-  const handleSaveNote = () => {
-    if (selectedDate && onEditNote) {
-      onEditNote(selectedDate, editNote)
+    if (onEditNote) {
+      onEditNote(date, note)
     }
-    onClose()
   }
 
   const handleDeleteClick = (date: string) => {
@@ -106,13 +94,43 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
             >
               {isCompleted ? (
                 <Tooltip 
-                  label={note ? `${format(parseISO(completedDate!), 'MMM d, yyyy')}\n${note}` : format(parseISO(completedDate!), 'MMM d, yyyy')}
+                  label={
+                    <Box
+                      p={2}
+                      bg="rgba(0, 0, 0, 0.4)"
+                      borderRadius="md"
+                      backdropFilter="blur(8px)"
+                      border="1px solid rgba(255, 255, 255, 0.1)"
+                      boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+                    >
+                      <Text
+                        fontWeight="bold"
+                        color="blue.200"
+                        fontSize="sm"
+                        mb={note ? 1 : 0}
+                      >
+                        {format(parseISO(completedDate!), 'MMMM d, yyyy')}
+                      </Text>
+                      {note && (
+                        <Text
+                          color="whiteAlpha.900"
+                          fontSize="sm"
+                          whiteSpace="pre-wrap"
+                          maxW="300px"
+                        >
+                          {note}
+                        </Text>
+                      )}
+                    </Box>
+                  }
                   placement="top"
                   hasArrow
+                  bg="transparent"
+                  p={0}
                 >
                   <Box position="relative">
                     <Text fontWeight="bold">{dayNumber}</Text>
-                    <Menu>
+                    <Menu gutter={0} placement="bottom-end" isLazy>
                       <MenuButton
                         as={IconButton}
                         icon={<HamburgerIcon />}
@@ -123,26 +141,47 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
                         right={-1}
                         color="white"
                         _hover={{ bg: "whiteAlpha.300" }}
+                        zIndex={1}
                       />
-                      <MenuList bg="blue.800" borderColor="whiteAlpha.200">
-                        <MenuItem
-                          icon={<EditIcon />}
-                          onClick={() => handleEditClick(completedDate!)}
-                          bg="transparent"
-                          _hover={{ bg: "whiteAlpha.200" }}
+                      <Portal>
+                        <MenuList 
+                          bg="blackAlpha.500" 
+                          borderColor="whiteAlpha.200"
+                          zIndex={1000}
+                          minW="120px"
+                          boxShadow="0 4px 6px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1)"
+                          py={1}
+                          sx={{
+                            isolation: "isolate",
+                            backdropFilter: "blur(8px)"
+                          }}
                         >
-                          Edit Note
-                        </MenuItem>
-                        <MenuItem
-                          icon={<DeleteIcon />}
-                          onClick={() => handleDeleteClick(completedDate!)}
-                          bg="transparent"
-                          _hover={{ bg: "whiteAlpha.200" }}
-                          color="red.300"
-                        >
-                          Remove Day
-                        </MenuItem>
-                      </MenuList>
+                          <MenuItem
+                            icon={<EditIcon />}
+                            onClick={() => handleEditClick(completedDate!)}
+                            bg="transparent"
+                            _hover={{ bg: "whiteAlpha.200" }}
+                            w="100%"
+                            px={3}
+                            py={2}
+                            color="whiteAlpha.900"
+                          >
+                            Edit Note
+                          </MenuItem>
+                          <MenuItem
+                            icon={<DeleteIcon />}
+                            onClick={() => handleDeleteClick(completedDate!)}
+                            bg="transparent"
+                            _hover={{ bg: "whiteAlpha.200" }}
+                            color="red.300"
+                            w="100%"
+                            px={3}
+                            py={2}
+                          >
+                            Remove Day
+                          </MenuItem>
+                        </MenuList>
+                      </Portal>
                     </Menu>
                   </Box>
                 </Tooltip>
@@ -158,55 +197,6 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
           )
         })}
       </Grid>
-
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.600" />
-        <ModalContent bg="blue.900" borderRadius="xl" mx={3}>
-          <ModalHeader bgGradient="linear(to-r, blue.400, blue.600)" color="white" borderTopRadius="xl">
-            Edit Note
-          </ModalHeader>
-          <ModalCloseButton color="white" />
-          <ModalBody p={5}>
-            <Text fontWeight="semibold" mb={2} color="white" letterSpacing="wide">
-              {selectedDate && format(parseISO(selectedDate), 'MMMM d, yyyy')}
-            </Text>
-            <Textarea
-              value={editNote}
-              onChange={(e) => setEditNote(e.target.value)}
-              bg="whiteAlpha.200"
-              color="white"
-              borderColor="whiteAlpha.300"
-              borderRadius="xl"
-              _hover={{ borderColor: "whiteAlpha.400" }}
-              _focus={{ 
-                borderColor: "whiteAlpha.500",
-                boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.5)"
-              }}
-              _placeholder={{ color: "whiteAlpha.600" }}
-              fontSize={{ base: "xs", md: "sm" }}
-              resize="vertical"
-            />
-          </ModalBody>
-          <ModalFooter bg="whiteAlpha.100" borderBottomRadius="xl" gap={2}>
-            <Button variant="ghost" onClick={onClose} color="white" _hover={{ bg: "whiteAlpha.200" }}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSaveNote}
-              bgGradient="linear(to-r, blue.400, blue.600)"
-              color="white"
-              _hover={{
-                bgGradient: "linear(to-r, blue.500, blue.700)",
-              }}
-              _active={{
-                bgGradient: "linear(to-r, blue.600, blue.800)",
-              }}
-            >
-              Save Changes
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </Box>
   )
 }
