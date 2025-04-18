@@ -1,7 +1,6 @@
 import { Box, Button, Heading, Text, VStack, Input, FormControl, FormLabel, Container, useBreakpointValue, Menu, MenuButton, MenuList, MenuItem, IconButton, Tooltip, Switch, Flex } from '@chakra-ui/react'
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { Global as EmotionGlobal } from '@emotion/react'
 import { SettingsIcon } from '@chakra-ui/icons'
 import { FaSnowflake } from 'react-icons/fa'
 import SnowfallEffect from './SnowfallEffect'

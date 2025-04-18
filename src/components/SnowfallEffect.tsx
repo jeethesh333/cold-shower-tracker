@@ -1,4 +1,4 @@
-import { Box, IconButton, useColorModeValue, Tooltip } from '@chakra-ui/react'
+import { Box, IconButton, Tooltip } from '@chakra-ui/react'
 import { useState, useEffect } from 'react'
 import { FaSnowflake } from 'react-icons/fa'
 
