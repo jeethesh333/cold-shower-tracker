@@ -21,7 +21,7 @@ import {
 } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
 import { FaRobot, FaPaperPlane } from 'react-icons/fa';
-import { COHERE_API_KEY } from '../config';
+import { COHERE_API_KEY, isValidApiKey } from '../config';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -120,10 +120,10 @@ User message: ${userMessage}
   const sendMessage = async () => {
     if (!input.trim()) return;
     
-    if (!COHERE_API_KEY) {
+    if (!isValidApiKey(COHERE_API_KEY)) {
       toast({
-        title: 'API Key Missing',
-        description: 'Please set your Cohere API key in the config file.',
+        title: 'API Key Error',
+        description: 'Invalid or missing Cohere API key. Please check your .env file.',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -144,13 +144,13 @@ User message: ${userMessage}
     
     try {
       const prompt = generatePrompt(input);
-      console.log('Sending request to Cohere API...');
       
       const response = await fetch('https://api.cohere.ai/v1/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${COHERE_API_KEY}`,
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           model: 'command',
@@ -163,16 +163,12 @@ User message: ${userMessage}
         }),
       });
       
-      console.log('Response status:', response.status);
-      
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('API Error:', errorData);
         throw new Error(errorData.message || `API Error: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log('API Response:', data);
       
       if (!data.generations || !data.generations[0]) {
         throw new Error('Invalid response format from API');
