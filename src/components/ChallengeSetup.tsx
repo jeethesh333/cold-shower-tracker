@@ -27,11 +27,11 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
 
   // Use responsive values for container width
   const containerWidth = useBreakpointValue({
-    base: "95%",
-    sm: "85%",
-    md: "75%",
-    lg: "60%",
-    xl: "50%"
+    base: "90%",
+    sm: "70%",
+    md: "60%",
+    lg: "45%",
+    xl: "35%"
   })
 
   return (
