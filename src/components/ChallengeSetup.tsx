@@ -1,15 +1,26 @@
-import { Box, Button, Heading, Text, VStack, Input, FormControl, FormLabel, Container, useBreakpointValue } from '@chakra-ui/react'
-import { useState } from 'react'
+import { Box, Button, Heading, Text, VStack, Input, FormControl, FormLabel, Container, useBreakpointValue, Menu, MenuButton, MenuList, MenuItem, IconButton, Tooltip, Switch, Flex } from '@chakra-ui/react'
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { Global as EmotionGlobal } from '@emotion/react'
+import { SettingsIcon } from '@chakra-ui/icons'
+import { FaSnowflake } from 'react-icons/fa'
+import SnowfallEffect from './SnowfallEffect'
 
 interface ChallengeSetupProps {
   onStart: (days: number, startDate: string) => void;
 }
 
 const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
-  const [days, setDays] = useState(30)
+  const [days, setDays] = useState(50)
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [showSnowfall, setShowSnowfall] = useState(() => {
+    const saved = localStorage.getItem('showSnowfall')
+    return saved !== null ? JSON.parse(saved) : true
+  })
+
+  useEffect(() => {
+    localStorage.setItem('showSnowfall', JSON.stringify(showSnowfall))
+  }, [showSnowfall])
 
   const handleStart = () => {
     onStart(days, startDate)
@@ -26,26 +37,6 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
 
   return (
     <>
-      <EmotionGlobal
-        styles={{
-          '.snowflake': {
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            zIndex: 0,
-            pointerEvents: 'none',
-            animation: 'fall 20s linear infinite',
-            opacity: 0.9,
-          },
-          '@keyframes fall': {
-            '0%': { transform: 'translateY(-10%) translateX(0)' },
-            '100%': { transform: 'translateY(110%) translateX(50px)' }
-          }
-        }}
-      />
-
       <Box
         width="100vw"
         minHeight="100vh"
@@ -72,6 +63,52 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
           zIndex: 0
         }}
       >
+        <Box
+          position="fixed"
+          top={4}
+          right={4}
+          zIndex={1000}
+        >
+          <Menu>
+            <Tooltip label="Preferences" placement="left">
+              <MenuButton
+                as={IconButton}
+                icon={<SettingsIcon />}
+                variant="ghost"
+                color="white"
+                _hover={{
+                  bg: "whiteAlpha.200"
+                }}
+                backdropFilter="blur(8px)"
+              />
+            </Tooltip>
+            <MenuList bg="blue.800" borderColor="whiteAlpha.200">
+              <MenuItem 
+                bg="transparent" 
+                _hover={{ bg: "whiteAlpha.200" }}
+                onClick={() => setShowSnowfall((prev: boolean) => !prev)}
+              >
+                <Flex align="center" justify="space-between" width="100%">
+                  <Flex align="center" gap={2}>
+                    <FaSnowflake />
+                    <Text>Snowfall Effect</Text>
+                  </Flex>
+                  <Switch 
+                    isChecked={showSnowfall}
+                    colorScheme="blue"
+                    size="md"
+                  />
+                </Flex>
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        </Box>
+
+        <SnowfallEffect 
+          isEnabled={showSnowfall} 
+          onToggle={() => setShowSnowfall((prev: boolean) => !prev)} 
+        />
+
         <Container 
           maxW={containerWidth} 
           p={0}
@@ -239,20 +276,6 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
           </Box>
         </Container>
       </Box>
-
-      {Array.from({ length: 50 }).map((_, index) => (
-        <Box
-          key={index}
-          className="snowflake"
-          style={{
-            left: `${Math.random() * 100}vw`,
-            fontSize: `${Math.random() * 20 + 20}px`,
-            animationDelay: `${Math.random() * 10}s`,
-          }}
-        >
-          ❄️
-        </Box>
-      ))}
     </>
   )
 }

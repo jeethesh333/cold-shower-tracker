@@ -23,16 +23,23 @@ import {
   NumberInputField, 
   NumberInputStepper, 
   NumberIncrementStepper, 
-  NumberDecrementStepper 
+  NumberDecrementStepper,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Switch
 } from '@chakra-ui/react'
 import { Global as EmotionGlobal } from '@emotion/react'
 import { useState, useEffect } from 'react'
 import ReactConfetti from 'react-confetti'
 import { differenceInDays, format, isAfter, isBefore, parseISO } from 'date-fns'
-import { DeleteIcon, EditIcon, CheckIcon, CalendarIcon } from '@chakra-ui/icons'
+import { DeleteIcon, EditIcon, CheckIcon, CalendarIcon, SettingsIcon } from '@chakra-ui/icons'
 import { ChallengeData, SessionNote } from '../types'
 import ChallengeGrid from './ChallengeGrid'
 import confetti from "canvas-confetti"
+import SnowfallEffect from './SnowfallEffect'
+import { FaSnowflake } from 'react-icons/fa'
 
 interface ChallengeTrackerProps {
   challengeData: ChallengeData;
@@ -60,6 +67,10 @@ const motivationalQuotes = [
 
 const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: ChallengeTrackerProps) => {
   const [showConfetti, setShowConfetti] = useState(false)
+  const [showSnowfall, setShowSnowfall] = useState(() => {
+    const saved = localStorage.getItem('showSnowfall')
+    return saved !== null ? JSON.parse(saved) : true
+  })
   const [currentQuote, setCurrentQuote] = useState<{ text: string; author: string } | null>(null)
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
@@ -91,6 +102,10 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem('showSnowfall', JSON.stringify(showSnowfall))
+  }, [showSnowfall])
 
   const completedDays = challengeData.completedDates.length
   const progress = (completedDays / challengeData.totalDays) * 100
@@ -451,18 +466,88 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
       left="0"
       margin="0"
       padding="0"
-      _before={{
-        content: '""',
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        bgGradient: "radial(circle at 20% 20%, whiteAlpha.100 0%, transparent 50%)",
-        pointerEvents: "none",
-        zIndex: 0
+      sx={{
+        '&::before': {
+          content: '""',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.05)',
+          pointerEvents: 'none',
+          zIndex: 0
+        }
       }}
     >
+      <EmotionGlobal
+        styles={{
+          '.confetti-container': {
+            position: 'fixed',
+            pointerEvents: 'none',
+            width: '100%',
+            height: '100%',
+            top: 0,
+            left: 0,
+            zIndex: 999999
+          },
+          '@keyframes shine': {
+            '0%': { transform: 'translateX(-100%)' },
+            '100%': { transform: 'translateX(100%)' }
+          },
+          '@keyframes glow': {
+            '0%': { boxShadow: '0 0 5px rgba(0, 0, 0, 0.2)' },
+            '100%': { boxShadow: '0 0 20px rgba(0, 0, 0, 0.5)' }
+          }
+        }}
+      />
+
+      <Box
+        position="fixed"
+        top={4}
+        right={4}
+        zIndex={1000}
+      >
+        <Menu>
+          <Tooltip label="Preferences" placement="left">
+            <MenuButton
+              as={IconButton}
+              icon={<SettingsIcon />}
+              variant="ghost"
+              color="white"
+              _hover={{
+                bg: "whiteAlpha.200"
+              }}
+              backdropFilter="blur(8px)"
+            />
+          </Tooltip>
+          <MenuList bg="blue.800" borderColor="whiteAlpha.200">
+            <MenuItem 
+              bg="transparent" 
+              _hover={{ bg: "whiteAlpha.200" }}
+              onClick={() => setShowSnowfall((prev: boolean) => !prev)}
+            >
+              <Flex align="center" justify="space-between" width="100%">
+                <Flex align="center" gap={2}>
+                  <FaSnowflake />
+                  <Text>Snowfall Effect</Text>
+                </Flex>
+                <Switch 
+                  isChecked={showSnowfall}
+                  colorScheme="blue"
+                  size="md"
+                />
+              </Flex>
+            </MenuItem>
+          </MenuList>
+        </Menu>
+      </Box>
+
+      <SnowfallEffect 
+        isEnabled={showSnowfall} 
+        onToggle={() => setShowSnowfall((prev: boolean) => !prev)} 
+      />
+
       {isAnimating && (
         <Box
           position="fixed"
@@ -607,14 +692,14 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
           <Box textAlign="center" width="100%">
             <Heading 
               size={{ base: "md", md: "lg" }}
-              bgGradient="linear(to-r, blue.100, white)"
+              bgGradient="linear(to-r, blue.50, white)"
               bgClip="text"
               mb={{ base: 2, md: 3 }}
               letterSpacing="tight"
               fontWeight="extrabold"
-              textShadow="0 1px 5px rgba(0,0,0,0.2)"
+              filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))"
             >
-              ❄️Cold Shower Challenge
+              ❄️ Cold Shower Challenge
             </Heading>
             <Text 
               fontSize={{ base: "sm", md: "md" }}
@@ -641,9 +726,9 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
               <Box 
                 p={{ base: 4, md: 5 }}
                 borderRadius="xl"
-                bg="whiteAlpha.200"
+                bg="whiteAlpha.100"
                 backdropFilter="blur(8px)"
-                boxShadow="md"
+                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
                 textAlign="center"
                 transform="translateY(0)"
                 transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
@@ -656,7 +741,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  bgGradient: currentStreak >= 10 ? "linear(to-r, blue.200, blue.500, purple.500)" : "linear(to-br, whiteAlpha.100, transparent)",
+                  bgGradient: currentStreak >= 10 ? "linear(to-r, blue.200, blue.500, purple.500)" : "linear(to-br, whiteAlpha.50, transparent)",
                   opacity: currentStreak >= 10 ? 0.8 : 0,
                   transition: "opacity 0.3s",
                   animation: currentStreak >= 10 ? "glow 1.5s infinite alternate" : "none",
@@ -665,7 +750,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                 }}
                 _hover={{
                   transform: "translateY(-2px)",
-                  boxShadow: "lg",
+                  boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)",
                   _before: {
                     opacity: 1
                   }
@@ -688,9 +773,9 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
               <Box 
                 p={{ base: 4, md: 5 }}
                 borderRadius="xl"
-                bg="whiteAlpha.200"
+                bg="whiteAlpha.100"
                 backdropFilter="blur(8px)"
-                boxShadow="md"
+                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
                 textAlign="center"
                 transform="translateY(0)"
                 transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
@@ -703,13 +788,13 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  bgGradient: "linear(to-br, whiteAlpha.100, transparent)",
+                  bgGradient: "linear(to-br, whiteAlpha.50, transparent)",
                   opacity: 0,
                   transition: "opacity 0.3s"
                 }}
                 _hover={{
                   transform: "translateY(-2px)",
-                  boxShadow: "lg",
+                  boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)",
                   _before: {
                     opacity: 1
                   }
@@ -732,9 +817,9 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
               <Box 
                 p={{ base: 4, md: 5 }}
                 borderRadius="xl"
-                bg="whiteAlpha.200"
+                bg="whiteAlpha.100"
                 backdropFilter="blur(8px)"
-                boxShadow="md"
+                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
                 textAlign="center"
                 transform="translateY(0)"
                 transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
@@ -747,13 +832,13 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  bgGradient: "linear(to-br, whiteAlpha.100, transparent)",
+                  bgGradient: "linear(to-br, whiteAlpha.50, transparent)",
                   opacity: 0,
                   transition: "opacity 0.3s"
                 }}
                 _hover={{
                   transform: "translateY(-2px)",
-                  boxShadow: "lg",
+                  boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)",
                   _before: {
                     opacity: 1
                   }
@@ -777,11 +862,11 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
 
             <Box 
               width="100%" 
-              bg="whiteAlpha.200"
+              bg="whiteAlpha.100"
               backdropFilter="blur(8px)"
               p={{ base: 4, md: 5 }}
               borderRadius="xl"
-              boxShadow="md"
+              boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
               position="relative"
               overflow="hidden"
               _before={{
@@ -791,7 +876,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                 left: 0,
                 right: 0,
                 bottom: 0,
-                bgGradient: "linear(to-br, whiteAlpha.100, transparent)",
+                bgGradient: "linear(to-br, whiteAlpha.50, transparent)",
                 opacity: 0,
                 transition: "opacity 0.3s"
               }}
@@ -840,7 +925,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
               <Box
                 width="100%"
                 height="16px"
-                bg="whiteAlpha.200"
+                bg="whiteAlpha.100"
                 borderRadius="full"
                 overflow="hidden"
                 position="relative"
@@ -897,15 +982,15 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
 
             <Box 
               width="100%" 
-              bg="whiteAlpha.200"
+              bg="whiteAlpha.100"
               backdropFilter="blur(8px)"
               p={{ base: 4, md: 5 }}
               borderRadius="xl"
-              boxShadow="md"
+              boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
               position="relative"
               transition="all 0.3s"
               _hover={{
-                boxShadow: "lg",
+                boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)",
                 transform: "translateY(-1px)"
               }}
             >
@@ -943,7 +1028,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                   placeholder="How was your cold shower experience today? Share your thoughts, feelings, and any breakthroughs..."
                   minH="80px"
                   maxH="240px"
-                  bg="whiteAlpha.200"
+                  bg="whiteAlpha.100"
                   color="white"
                   borderColor="whiteAlpha.300"
                   borderRadius="xl"
@@ -989,14 +1074,14 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                 _hover={{
                   bgGradient: "linear(to-r, blue.500, blue.700)",
                   transform: "translateY(-1px)",
-                  boxShadow: "lg"
+                  boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)"
                 }}
                 _active={{
                   transform: "translateY(0)",
-                  boxShadow: "md"
+                  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
                 }}
                 transition="all 0.2s"
-                boxShadow="md"
+                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
                 fontWeight="semibold"
                 letterSpacing="wide"
                 borderRadius="xl"
@@ -1013,14 +1098,14 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                 _hover={{
                   bg: "whiteAlpha.300",
                   transform: "translateY(-1px)",
-                  boxShadow: "lg"
+                  boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)"
                 }}
                 _active={{
                   transform: "translateY(0)",
-                  boxShadow: "md"
+                  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
                 }}
                 transition="all 0.2s"
-                boxShadow="md"
+                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
                 fontWeight="semibold"
                 letterSpacing="wide"
                 borderRadius="xl"
@@ -1042,14 +1127,14 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
               _hover={{
                 bg: "rgba(255, 0, 0, 0.1)",
                 transform: "translateY(-1px)",
-                boxShadow: "lg"
+                boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)"
               }}
               _active={{
                 transform: "translateY(0)",
-                boxShadow: "md"
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
               }}
               transition="all 0.2s"
-              boxShadow="sm"
+              boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
               width="100%"
               fontWeight="semibold"
               letterSpacing="wide"
@@ -1069,10 +1154,10 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
               height="fit-content"
               maxHeight={{ base: "400px", lg: "calc(100vh - 2rem)" }}
               overflowY="auto"
-              bg="whiteAlpha.200"
+              bg="whiteAlpha.100"
               backdropFilter="blur(8px)"
               borderRadius="xl"
-              boxShadow="md"
+              boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
               mt={{ base: 4, lg: 0 }}
               sx={{
                 '&::-webkit-scrollbar': {
@@ -1098,16 +1183,16 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                     <Box 
                       key={index} 
                       p={3}
-                      bg="whiteAlpha.200"
+                      bg="whiteAlpha.100"
                       borderRadius="xl"
                       position="relative"
                       transition="all 0.2s"
                       _hover={{
-                        bg: "whiteAlpha.300",
+                        bg: "whiteAlpha.200",
                         transform: "translateY(-1px)",
-                        boxShadow: "md"
+                        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
                       }}
-                      boxShadow="sm"
+                      boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
                     >
                       <Grid templateColumns="1fr auto" gap={3} alignItems="start">
                         <Box>
@@ -1130,7 +1215,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                             onClick={() => handleEditNote(note)}
                             variant="ghost"
                             color="white"
-                            _hover={{ bg: "whiteAlpha.300" }}
+                            _hover={{ bg: "whiteAlpha.200" }}
                             borderRadius="lg"
                             transition="all 0.2s"
                           />
@@ -1141,7 +1226,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                             onClick={() => handleDeleteDate(note.date)}
                             variant="ghost"
                             color="white"
-                            _hover={{ bg: "whiteAlpha.300" }}
+                            _hover={{ bg: "whiteAlpha.200" }}
                             borderRadius="lg"
                             transition="all 0.2s"
                           />
@@ -1162,10 +1247,10 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
               height="fit-content"
               maxHeight={{ base: "400px", lg: "calc(100vh - 2rem)" }}
               overflowY="auto"
-              bg="whiteAlpha.200"
+              bg="whiteAlpha.100"
               backdropFilter="blur(8px)"
               borderRadius="xl"
-              boxShadow="md"
+              boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
               mt={{ base: 4, lg: 0 }}
               sx={{
                 '&::-webkit-scrollbar': {
@@ -1442,60 +1527,6 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
           </ModalFooter>
         </ModalContent>
       </Modal>
-
-      <EmotionGlobal
-        styles={{
-          '.confetti-container': {
-            position: 'fixed',
-            pointerEvents: 'none',
-            width: '100%',
-            height: '100%',
-            top: 0,
-            left: 0,
-            zIndex: 999999
-          },
-          '@keyframes shine': {
-            '0%': { transform: 'translateX(-100%)' },
-            '100%': { transform: 'translateX(100%)' }
-          },
-          '@keyframes glow': {
-            '0%': { boxShadow: '0 0 5px rgba(0, 0, 0, 0.2)' },
-            '100%': { boxShadow: '0 0 20px rgba(0, 0, 0, 0.5)' }
-          },
-          '.snowflake': {
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            zIndex: 0,
-            pointerEvents: 'none',
-            animation: 'fall 20s linear infinite',
-            opacity: 0.7,
-            willChange: 'transform',
-          },
-          '@keyframes fall': {
-            '0%': { transform: 'translateY(-10%) translateX(0)' },
-            '100%': { transform: 'translateY(110%) translateX(50px)' }
-          }
-        }}
-      />
-
-      {Array.from({ length: 50 }).map((_, index) => (
-        <Box
-          key={index}
-          className="snowflake"
-          style={{
-            left: `${Math.random() * 100}vw`,
-            fontSize: `${Math.random() * 20 + 20}px`,
-            animationDelay: `${Math.random() * 10}s`,
-            position: 'fixed',
-            pointerEvents: 'none',
-          }}
-        >
-          ❄️
-        </Box>
-      ))}
     </Box>
   )
 }
