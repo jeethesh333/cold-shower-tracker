@@ -46,6 +46,7 @@ import ChallengeGrid from './ChallengeGrid'
 import confetti from "canvas-confetti"
 import SnowfallEffect from './SnowfallEffect'
 import { FaSnowflake } from 'react-icons/fa'
+import ChatAssistant from './ChatAssistant'
 
 interface ChallengeTrackerProps {
   challengeData: ChallengeData;
@@ -70,6 +71,39 @@ const motivationalQuotes = [
   { text: "Discomfort today, strength tomorrow", author: "Anonymous" },
   { text: "Push your limits, find your strength", author: "Anonymous" }
 ]
+
+const getLevelInfo = (progress: number) => {
+  if (progress >= 100) return { 
+    label: 'Discipline Peak', 
+    color: 'blue.100', 
+    description: 'Challenge completed! You\'ve mastered the cold.' 
+  }
+  if (progress >= 80) return { 
+    label: 'Mind Ice', 
+    color: 'blue.200', 
+    description: 'Almost there! Your resilience is remarkable.' 
+  }
+  if (progress >= 60) return { 
+    label: 'Frozen Focus', 
+    color: 'blue.300', 
+    description: 'Strong progress! Keep pushing forward.' 
+  }
+  if (progress >= 40) return { 
+    label: 'Cold Warrior', 
+    color: 'blue.400', 
+    description: 'You\'re building impressive momentum!' 
+  }
+  if (progress >= 20) return { 
+    label: 'Frost Initiate', 
+    color: 'blue.500', 
+    description: 'You\'ve embraced the cold journey.' 
+  }
+  return { 
+    label: 'Getting Started', 
+    color: 'blue.600', 
+    description: 'Beginning your transformation.' 
+  }
+}
 
 const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: ChallengeTrackerProps) => {
   const [showConfetti, setShowConfetti] = useState(false)
@@ -101,6 +135,10 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [editedNoteText, setEditedNoteText] = useState('')
   const cancelRef = useRef<HTMLButtonElement>(null)
+  const [userName, setUserName] = useState<string>(() => {
+    const savedName = localStorage.getItem('userName');
+    return savedName || 'User';
+  })
 
   useEffect(() => {
     const handleResize = () => {
@@ -117,6 +155,10 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   useEffect(() => {
     localStorage.setItem('showSnowfall', JSON.stringify(showSnowfall))
   }, [showSnowfall])
+
+  useEffect(() => {
+    localStorage.setItem('userName', userName);
+  }, [userName]);
 
   const completedDays = challengeData.completedDates.length
   const progress = (completedDays / challengeData.totalDays) * 100
@@ -468,6 +510,8 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   const sortedNotes = [...challengeData.notes].sort((prev: SessionNote, next: SessionNote) => {
     return parseISO(next.date).getTime() - parseISO(prev.date).getTime();
   })
+
+  const levelInfo = getLevelInfo(progress)
 
   return (
     <Box
@@ -930,9 +974,9 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                     fontWeight="bold" 
                     fontSize={{ base: "lg", md: "xl" }}
                     bgGradient={
-                      progress >= 100 ? "linear(to-r, green.200, green.400)" :
-                      progress >= 75 ? "linear(to-r, blue.200, blue.400)" :
-                      progress >= 50 ? "linear(to-r, cyan.200, cyan.400)" :
+                      progress >= 100 ? "linear(to-r, blue.200, blue.400)" :
+                      progress >= 75 ? "linear(to-r, cyan.200, cyan.400)" :
+                      progress >= 50 ? "linear(to-r, green.200, green.400)" :
                       progress >= 25 ? "linear(to-r, purple.200, purple.400)" :
                       "linear(to-r, pink.200, pink.400)"
                     }
@@ -951,31 +995,58 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                 position="relative"
                 boxShadow="inset 0 1px 2px rgba(0,0,0,0.1)"
               >
-                <Box
-                  width={`${progress}%`}
-                  height="100%"
-                  bgGradient={
-                    progress >= 100 ? "linear(to-r, green.200, green.400)" :
-                    progress >= 75 ? "linear(to-r, blue.200, blue.400)" :
-                    progress >= 50 ? "linear(to-r, cyan.200, cyan.400)" :
-                    progress >= 25 ? "linear(to-r, purple.200, purple.400)" :
-                    "linear(to-r, pink.200, pink.400)"
+                <Tooltip
+                  label={
+                    <Box p={2}>
+                      <Text fontWeight="bold" color={levelInfo.color} mb={1}>
+                        {levelInfo.label}
+                      </Text>
+                      <Text fontSize="sm" color="white">
+                        {levelInfo.description}
+                      </Text>
+                      <Text fontSize="xs" color="whiteAlpha.800" mt={1}>
+                        Progress: {Math.round(progress)}%
+                      </Text>
+                      {currentStreak > 0 && (
+                        <Text fontSize="xs" color="whiteAlpha.800">
+                          Current Streak: {currentStreak} days
+                        </Text>
+                      )}
+                    </Box>
                   }
-                  borderRadius="full"
-                  transition="all 1s cubic-bezier(0.4, 0, 0.2, 1)"
-                  position="relative"
-                  _after={{
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
-                    transform: "translateX(-100%)",
-                    animation: "shine 2s infinite"
-                  }}
-                />
+                  placement="top"
+                  hasArrow
+                  bg="rgba(0, 0, 0, 0.8)"
+                  borderRadius="md"
+                  px={3}
+                  py={2}
+                >
+                  <Box
+                    width={`${progress}%`}
+                    height="100%"
+                    bgGradient={
+                      progress >= 100 ? "linear(to-r, blue.200, blue.400)" :
+                      progress >= 75 ? "linear(to-r, cyan.200, cyan.400)" :
+                      progress >= 50 ? "linear(to-r, green.200, green.400)" :
+                      progress >= 25 ? "linear(to-r, purple.200, purple.400)" :
+                      "linear(to-r, pink.200, pink.400)"
+                    }
+                    borderRadius="full"
+                    transition="all 1s cubic-bezier(0.4, 0, 0.2, 1)"
+                    position="relative"
+                    _after={{
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
+                      transform: "translateX(-100%)",
+                      animation: "shine 2s infinite"
+                    }}
+                  />
+                </Tooltip>
               </Box>
               <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3} mt={4}>
                 <Box>
@@ -1606,6 +1677,14 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      <ChatAssistant
+        streak={currentStreak}
+        completedDays={completedDays}
+        totalDays={challengeData.totalDays}
+        userName={userName}
+        notes={challengeData.notes}
+      />
     </Box>
   )
 }

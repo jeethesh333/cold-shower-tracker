@@ -150,11 +150,12 @@ const MusicPlayer = () => {
     }
   }, [playingTrack, playNextTrack]);
 
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>, trackPath: string) => {
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>, trackPath: string) => {
     if (!progressBarRef.current) return
 
     const rect = progressBarRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const x = clientX - rect.left
     const percentage = (x / rect.width) * 100
     const trackDuration = trackDurations[trackPath] || 0
     const newTime = (percentage / 100) * trackDuration
@@ -169,6 +170,28 @@ const MusicPlayer = () => {
     if (audioRef.current && playingTrack === trackPath) {
       audioRef.current.currentTime = newTime
     }
+  }
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>, trackPath: string) => {
+    if (!progressBarRef.current) return
+
+    const rect = progressBarRef.current.getBoundingClientRect()
+    const x = e.touches[0].clientX - rect.left
+    const percentage = (x / rect.width) * 100
+    const trackDuration = trackDurations[trackPath] || 0
+    const time = (percentage / 100) * trackDuration
+
+    setPreviewTime(time)
+    setTooltipPosition(Math.min(Math.max(x, 0), rect.width))
+  }
+
+  const handleTouchStart = () => {
+    setIsHovering(true)
+  }
+
+  const handleTouchEnd = () => {
+    setIsHovering(false)
+    setPreviewTime(null)
   }
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, trackPath: string) => {
@@ -428,6 +451,19 @@ const MusicPlayer = () => {
                         onClick={(e) => {
                           e.stopPropagation()
                           handleSeek(e, track.path)
+                        }}
+                        onTouchStart={(e) => {
+                          e.stopPropagation()
+                          handleTouchStart()
+                        }}
+                        onTouchMove={(e) => {
+                          e.stopPropagation()
+                          handleTouchMove(e, track.path)
+                        }}
+                        onTouchEnd={(e) => {
+                          e.stopPropagation()
+                          handleSeek(e, track.path)
+                          handleTouchEnd()
                         }}
                         onMouseMove={(e) => handleMouseMove(e, track.path)}
                         onMouseEnter={handleMouseEnter}
