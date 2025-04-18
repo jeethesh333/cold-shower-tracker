@@ -2,6 +2,7 @@ import { Container, VStack } from '@chakra-ui/react'
 import { useState, useEffect } from 'react'
 import ChallengeSetup from './components/ChallengeSetup'
 import ChallengeTracker from './components/ChallengeTracker'
+import MusicPlayer from './components/MusicPlayer'
 import { ChallengeData } from './types'
 import './styles/calendar.css'
 
@@ -33,6 +34,7 @@ function App() {
 
   return (
     <Container maxW="container.lg" py={8}>
+      <MusicPlayer />
       <VStack gap={8}>
         {!challengeData ? (
           <ChallengeSetup onStart={handleStartChallenge} />
