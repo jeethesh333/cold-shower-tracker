@@ -1,6 +1,6 @@
-import { Box, Grid, Text, Tooltip, IconButton, Menu, MenuButton, MenuList, MenuItem, Portal } from '@chakra-ui/react'
+import { Box, Grid, Text, Tooltip, Menu, MenuButton, MenuList, MenuItem, Portal } from '@chakra-ui/react'
 import { format, parseISO } from 'date-fns'
-import { DeleteIcon, EditIcon, HamburgerIcon } from '@chakra-ui/icons'
+import { DeleteIcon, EditIcon } from '@chakra-ui/icons'
 import { ChallengeData } from '../types'
 
 interface ChallengeGridProps {
@@ -87,6 +87,7 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
               textAlign="center"
               position="relative"
               transition="all 0.2s"
+              cursor={isCompleted ? "pointer" : "default"}
               _hover={{
                 transform: isCompleted ? "scale(1.05)" : "none",
                 bg: isCompleted ? "blue.400" : "whiteAlpha.200"
@@ -128,62 +129,50 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
                   bg="transparent"
                   p={0}
                 >
-                  <Box position="relative">
-                    <Text fontWeight="bold">{dayNumber}</Text>
-                    <Menu gutter={0} placement="bottom-end" isLazy>
-                      <MenuButton
-                        as={IconButton}
-                        icon={<HamburgerIcon />}
-                        variant="ghost"
-                        size="xs"
-                        position="absolute"
-                        top={-1}
-                        right={-1}
-                        color="white"
-                        _hover={{ bg: "whiteAlpha.300" }}
-                        zIndex={1}
-                      />
-                      <Portal>
-                        <MenuList 
-                          bg="blackAlpha.500" 
-                          borderColor="whiteAlpha.200"
-                          zIndex={1000}
-                          minW="120px"
-                          boxShadow="0 4px 6px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1)"
-                          py={1}
-                          sx={{
-                            isolation: "isolate",
-                            backdropFilter: "blur(8px)"
-                          }}
+                  <Menu gutter={0} placement="bottom-end" isLazy>
+                    <MenuButton as={Box} w="100%" h="100%">
+                      <Text fontWeight="bold">{dayNumber}</Text>
+                    </MenuButton>
+                    <Portal>
+                      <MenuList 
+                        bg="blackAlpha.500" 
+                        borderColor="whiteAlpha.200"
+                        zIndex={1000}
+                        minW="120px"
+                        boxShadow="0 4px 6px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1)"
+                        py={1}
+                        sx={{
+                          isolation: "isolate",
+                          backdropFilter: "blur(8px)"
+                        }}
+                      >
+                        <MenuItem
+                          icon={<EditIcon />}
+                          onClick={() => handleEditClick(completedDate!)}
+                          bg="transparent"
+                          _hover={{ bg: "whiteAlpha.200" }}
+                          w="100%"
+                          px={3}
+                          py={2}
+                          color="whiteAlpha.900"
                         >
-                          <MenuItem
-                            icon={<EditIcon />}
-                            onClick={() => handleEditClick(completedDate!)}
-                            bg="transparent"
-                            _hover={{ bg: "whiteAlpha.200" }}
-                            w="100%"
-                            px={3}
-                            py={2}
-                            color="whiteAlpha.900"
-                          >
-                            Edit Note
-                          </MenuItem>
-                          <MenuItem
-                            icon={<DeleteIcon />}
-                            onClick={() => handleDeleteClick(completedDate!)}
-                            bg="transparent"
-                            _hover={{ bg: "whiteAlpha.200" }}
-                            color="red.300"
-                            w="100%"
-                            px={3}
-                            py={2}
-                          >
-                            Remove Day
-                          </MenuItem>
-                        </MenuList>
-                      </Portal>
-                    </Menu>
-                  </Box>
+                          Edit Note
+                        </MenuItem>
+                        <MenuItem
+                          icon={<DeleteIcon />}
+                          onClick={() => handleDeleteClick(completedDate!)}
+                          bg="transparent"
+                          _hover={{ bg: "whiteAlpha.200" }}
+                          color="red.300"
+                          w="100%"
+                          px={3}
+                          py={2}
+                        >
+                          Remove Day
+                        </MenuItem>
+                      </MenuList>
+                    </Portal>
+                  </Menu>
                 </Tooltip>
               ) : (
                 <Text 
