@@ -40,7 +40,7 @@ import { Global as EmotionGlobal } from '@emotion/react'
 import { useState, useEffect, useRef } from 'react'
 import ReactConfetti from 'react-confetti'
 import { differenceInDays, format, isAfter, isBefore, parseISO } from 'date-fns'
-import { DeleteIcon, EditIcon, CheckIcon, CalendarIcon, SettingsIcon } from '@chakra-ui/icons'
+import { DeleteIcon, EditIcon, CalendarIcon, SettingsIcon } from '@chakra-ui/icons'
 import ChallengeGrid from './ChallengeGrid'
 import confetti from "canvas-confetti"
 import SnowfallEffect from './SnowfallEffect'
@@ -134,7 +134,6 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
   const [selectedPastDate, setSelectedPastDate] = useState('')
   const [pastDateNote, setPastDateNote] = useState('')
   const [showResetModal, setShowResetModal] = useState(false)
-  const [isNoteSaved, setIsNoteSaved] = useState(false)
   const [showDurationModal, setShowDurationModal] = useState(false)
   const [newDuration, setNewDuration] = useState(challengeData.days)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -496,14 +495,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
       notes: updatedNotes
     });
     
-    setIsNoteSaved(true);
-    toast({
-      title: "Note saved",
-      status: "success",
-      duration: 2000,
-    });
-    
-    setTimeout(() => setIsNoteSaved(false), 2000);
+    setNote('')
   };
 
   const handleDurationChange = () => {
@@ -1151,7 +1143,6 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                   value={note}
                   onChange={(e) => {
                     setNote(e.target.value);
-                    setIsNoteSaved(false);
                   }}
                   placeholder="How was your cold shower experience today? Share your thoughts, feelings, and any breakthroughs..."
                   minH="80px"

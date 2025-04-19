@@ -4,7 +4,8 @@ import ChallengeSetup from './components/ChallengeSetup'
 import ChallengeTracker from './components/ChallengeTracker'
 import ErrorBoundary from './components/ErrorBoundary'
 import MusicPlayer from './components/MusicPlayer'
-import { ChallengeData, validateChallengeData, sanitizeChallengeData } from './utils/validation'
+import { validateChallengeData, sanitizeChallengeData } from './utils/validation'
+import { ChallengeData } from './types'
 import './styles/calendar.css'
 
 function App() {
