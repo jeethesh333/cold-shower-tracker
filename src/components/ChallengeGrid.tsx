@@ -1,12 +1,20 @@
 import { Box, Grid, Text, Tooltip, Menu, MenuButton, MenuList, MenuItem, Portal } from '@chakra-ui/react'
 import { format, parseISO } from 'date-fns'
 import { DeleteIcon, EditIcon } from '@chakra-ui/icons'
-import { ChallengeData } from '../types'
+
+interface ChallengeData {
+  days: number
+  startDate: string
+  userName: string
+  completedDays: string[]
+  notes: Record<string, string>
+  lastLoggedDate: string | null
+}
 
 interface ChallengeGridProps {
-  challengeData: ChallengeData;
-  onEditNote?: (date: string, note: string) => void;
-  onDeleteDate?: (date: string) => void;
+  challengeData: ChallengeData
+  onEditNote?: (date: string, note: string) => void
+  onDeleteDate?: (date: string) => void
 }
 
 const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGridProps) => {
@@ -19,7 +27,7 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
   }
 
   const handleEditClick = (date: string) => {
-    const note = challengeData.notes.find(n => n.date === date)?.note || ''
+    const note = challengeData.notes[date] || ''
     if (onEditNote) {
       onEditNote(date, note)
     }
@@ -31,7 +39,8 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
     }
   }
 
-  const columns = getOptimalColumns(challengeData.totalDays)
+  const columns = getOptimalColumns(challengeData.days)
+  const completedDays = challengeData.completedDays || []
 
   return (
     <Box
@@ -64,19 +73,19 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
         templateColumns={`repeat(${columns}, 1fr)`}
         gap={2}
       >
-        {Array.from({ length: challengeData.totalDays }).map((_, index) => {
+        {Array.from({ length: challengeData.days }).map((_, index) => {
           const dayNumber = index + 1
-          const isCompleted = challengeData.completedDates.some(date => {
+          const isCompleted = completedDays.some(date => {
             const dayOfChallenge = Math.floor((new Date(date).getTime() - new Date(challengeData.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1
             return dayOfChallenge === dayNumber
           })
 
-          const completedDate = challengeData.completedDates.find(date => {
+          const completedDate = completedDays.find(date => {
             const dayOfChallenge = Math.floor((new Date(date).getTime() - new Date(challengeData.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1
             return dayOfChallenge === dayNumber
           })
 
-          const note = completedDate ? challengeData.notes.find(n => n.date === completedDate)?.note : null
+          const note = completedDate ? challengeData.notes[completedDate] : null
 
           return (
             <Box

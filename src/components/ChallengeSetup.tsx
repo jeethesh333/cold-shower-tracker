@@ -4,13 +4,14 @@ import { format } from 'date-fns'
 import { SettingsIcon } from '@chakra-ui/icons'
 import { FaSnowflake } from 'react-icons/fa'
 import SnowfallEffect from './SnowfallEffect'
+import { useToast } from '@chakra-ui/react'
 
 interface ChallengeSetupProps {
   onStart: (days: number, startDate: string, userName: string) => void;
 }
 
 const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
-  const [days, setDays] = useState(50)
+  const [days, setDays] = useState(10)
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [userName, setUserName] = useState(() => {
     const saved = localStorage.getItem('userName')
@@ -20,6 +21,8 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
     const saved = localStorage.getItem('showSnowfall')
     return saved !== null ? JSON.parse(saved) : true
   })
+
+  const toast = useToast()
 
   useEffect(() => {
     localStorage.setItem('showSnowfall', JSON.stringify(showSnowfall))
@@ -32,6 +35,28 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
   }, [userName])
 
   const handleStart = () => {
+    if (days < 10) {
+      toast({
+        title: "Invalid duration",
+        description: "Challenge duration must be at least 10 days",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      })
+      return
+    }
+
+    if (days > 365) {
+      toast({
+        title: "Invalid duration",
+        description: "Challenge duration cannot exceed 365 days",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      })
+      return
+    }
+
     const titleCase = (str: string) => {
       return str
         .split(' ')
@@ -238,9 +263,9 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
                 <Input
                   type="number"
                   value={days}
-                  min={1}
+                  min={10}
                   max={365}
-                  onChange={(e) => setDays(parseInt(e.target.value))}
+                  onChange={(e) => setDays(parseInt(e.target.value) || 0)}
                   bg="whiteAlpha.200"
                   color="white"
                   borderColor="whiteAlpha.300"
@@ -254,6 +279,9 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
                   _focus={{ 
                     borderColor: "blue.400",
                     boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)"
+                  }}
+                  _placeholder={{ 
+                    color: "whiteAlpha.500"
                   }}
                   mb={4}
                 />

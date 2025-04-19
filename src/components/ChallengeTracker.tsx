@@ -41,17 +41,31 @@ import { useState, useEffect, useRef } from 'react'
 import ReactConfetti from 'react-confetti'
 import { differenceInDays, format, isAfter, isBefore, parseISO } from 'date-fns'
 import { DeleteIcon, EditIcon, CheckIcon, CalendarIcon, SettingsIcon } from '@chakra-ui/icons'
-import { ChallengeData, SessionNote } from '../types'
 import ChallengeGrid from './ChallengeGrid'
 import confetti from "canvas-confetti"
 import SnowfallEffect from './SnowfallEffect'
 import { FaSnowflake } from 'react-icons/fa'
 import ChatAssistant from './ChatAssistant'
 
+interface ChallengeData {
+  days: number
+  startDate: string
+  userName: string
+  completedDays: string[]
+  notes: Record<string, string>
+  lastLoggedDate: string | null
+}
+
 interface ChallengeTrackerProps {
-  challengeData: ChallengeData;
-  setChallengeData: (data: ChallengeData) => void;
-  onReset: () => void;
+  challengeData: ChallengeData
+  onUpdate: (data: ChallengeData) => void
+  onReset: () => void
+}
+
+interface ChallengeGridProps {
+  challengeData: ChallengeData
+  onEditNote: (date: string, note: string) => void
+  onDeleteDate: (date: string) => void
 }
 
 const motivationalQuotes = [
@@ -105,7 +119,7 @@ const getLevelInfo = (progress: number) => {
   }
 }
 
-const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: ChallengeTrackerProps) => {
+const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTrackerProps) => {
   const [showConfetti, setShowConfetti] = useState(false)
   const [showSnowfall, setShowSnowfall] = useState(() => {
     const saved = localStorage.getItem('showSnowfall')
@@ -128,7 +142,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   const [showResetModal, setShowResetModal] = useState(false)
   const [isNoteSaved, setIsNoteSaved] = useState(false)
   const [showDurationModal, setShowDurationModal] = useState(false)
-  const [newDuration, setNewDuration] = useState(challengeData.totalDays)
+  const [newDuration, setNewDuration] = useState(challengeData.days)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false)
@@ -166,10 +180,10 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
     localStorage.setItem('userName', userName);
   }, [userName]);
 
-  const completedDays = challengeData.completedDates.length
-  const progress = (completedDays / challengeData.totalDays) * 100
-  const daysLeft = challengeData.totalDays - completedDays
-  const currentStreak = calculateStreak(challengeData.completedDates)
+  const completedDays = challengeData.completedDays.length
+  const progress = (completedDays / challengeData.days) * 100
+  const daysLeft = challengeData.days - completedDays
+  const currentStreak = calculateStreak(challengeData.completedDays)
 
   function calculateStreak(dates: string[]): number {
     if (dates.length === 0) return 0
@@ -294,7 +308,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   const handleLogSession = () => {
     const today = new Date();
     const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString().split('T')[0];
-    if (challengeData.completedDates.includes(localDate)) {
+    if (challengeData.completedDays.includes(localDate)) {
       toast({
         title: "Already logged",
         description: "You've already logged a session for today!",
@@ -316,10 +330,10 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
       setIsAnimating(false)
     }, 5000)
 
-    setChallengeData({
+    onUpdate({
       ...challengeData,
-      completedDates: [...challengeData.completedDates, localDate],
-      notes: note ? [...challengeData.notes, { date: localDate, note }] : challengeData.notes,
+      completedDays: [...challengeData.completedDays, localDate],
+      notes: note ? { ...challengeData.notes, [localDate]: note } : challengeData.notes,
     })
 
     setNote('')
@@ -334,16 +348,10 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   const handleSaveEdit = () => {
     if (!selectedDate) return
 
-    const updatedNotes = [...challengeData.notes]
-    const noteIndex = updatedNotes.findIndex(note => note.date === selectedDate)
-    
-    if (noteIndex >= 0) {
-      updatedNotes[noteIndex] = { date: selectedDate, note: editedNoteText }
-    } else {
-      updatedNotes.push({ date: selectedDate, note: editedNoteText })
-    }
+    const updatedNotes = { ...challengeData.notes }
+    updatedNotes[selectedDate] = editedNoteText
 
-    setChallengeData({
+    onUpdate({
       ...challengeData,
       notes: updatedNotes
     })
@@ -368,14 +376,15 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   const confirmDelete = () => {
     if (!selectedDate) return
 
-    const updatedCompletedDates = challengeData.completedDates.filter(
+    const updatedCompletedDays = challengeData.completedDays.filter(
       date => date !== selectedDate
     )
-    const updatedNotes = challengeData.notes.filter(note => note.date !== selectedDate)
+    const updatedNotes = { ...challengeData.notes }
+    delete updatedNotes[selectedDate]
 
-    setChallengeData({
+    onUpdate({
       ...challengeData,
-      completedDates: updatedCompletedDates,
+      completedDays: updatedCompletedDays,
       notes: updatedNotes
     })
 
@@ -395,11 +404,24 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
     const startDateObj = parseISO(challengeData.startDate + 'T00:00:00')
     const selectedDateObj = parseISO(pastDate + 'T00:00:00')
     const today = new Date()
+    const endDateObj = new Date(startDateObj)
+    endDateObj.setDate(endDateObj.getDate() + challengeData.days - 1)
 
     if (isBefore(selectedDateObj, startDateObj)) {
       toast({
         title: "Invalid date",
         description: "Cannot log dates before the challenge start date",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      })
+      return
+    }
+
+    if (isAfter(selectedDateObj, endDateObj)) {
+      toast({
+        title: "Invalid date",
+        description: "Cannot log dates after the challenge end date",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -418,7 +440,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
       return
     }
 
-    if (challengeData.completedDates.includes(pastDate)) {
+    if (challengeData.completedDays.includes(pastDate)) {
       toast({
         title: "Already logged",
         description: "This date has already been logged",
@@ -429,10 +451,10 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
       return
     }
 
-    setChallengeData({
+    onUpdate({
       ...challengeData,
-      completedDates: [...challengeData.completedDates, pastDate],
-      notes: pastDateNote ? [...challengeData.notes, { date: pastDate, note: pastDateNote }] : challengeData.notes,
+      completedDays: [...challengeData.completedDays, pastDate],
+      notes: pastDateNote ? { ...challengeData.notes, [pastDate]: pastDateNote } : challengeData.notes,
     })
 
     toast({
@@ -448,29 +470,29 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
     onPastDateClose()
   }
 
-  const handleResetClick = () => {
-    setShowResetModal(true)
-  }
-
-  const confirmReset = () => {
-    onReset()
-    setShowResetModal(false)
-  }
+  const handleReset = async () => {
+    setIsAnimating(true);
+    try {
+      localStorage.removeItem('challengeData');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('chatMessages');
+      onReset();
+    } finally {
+      setIsAnimating(false);
+      setShowResetModal(false);
+    }
+  };
 
   const handleSaveNote = () => {
     if (!note.trim()) return
     
     const today = new Date().toISOString().split('T')[0]
-    const existingNoteIndex = challengeData.notes.findIndex(n => n.date === today)
+    const existingNote = challengeData.notes[today]
     
-    let updatedNotes = [...challengeData.notes]
-    if (existingNoteIndex >= 0) {
-      updatedNotes[existingNoteIndex] = { date: today, note: note.trim() }
-    } else {
-      updatedNotes.push({ date: today, note: note.trim() })
-    }
+    let updatedNotes = { ...challengeData.notes }
+    updatedNotes[today] = note.trim()
     
-    setChallengeData({
+    onUpdate({
       ...challengeData,
       notes: updatedNotes
     })
@@ -486,6 +508,28 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   }
 
   const handleDurationChange = () => {
+    if (newDuration < 10) {
+      toast({
+        title: "Invalid duration",
+        description: "Challenge duration must be at least 10 days",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      })
+      return
+    }
+
+    if (newDuration > 365) {
+      toast({
+        title: "Invalid duration",
+        description: "Challenge duration cannot exceed 365 days",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      })
+      return
+    }
+
     if (newDuration < completedDays) {
       toast({
         title: "Invalid duration",
@@ -497,9 +541,9 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
       return
     }
 
-    setChallengeData({
+    onUpdate({
       ...challengeData,
-      totalDays: newDuration
+      days: newDuration
     })
 
     toast({
@@ -513,8 +557,8 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
     setShowDurationModal(false)
   }
 
-  const sortedNotes = [...challengeData.notes].sort((prev: SessionNote, next: SessionNote) => {
-    return parseISO(next.date).getTime() - parseISO(prev.date).getTime();
+  const sortedNotes = Object.entries(challengeData.notes).sort(([prevDate], [nextDate]) => {
+    return new Date(nextDate).getTime() - new Date(prevDate).getTime();
   })
 
   const levelInfo = getLevelInfo(progress)
@@ -1066,7 +1110,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                   <Text fontWeight="semibold" color="white" fontSize={{ base: "xs", md: "sm" }}>
                     {format(
                       new Date(new Date(challengeData.startDate + 'T00:00:00').setDate(
-                        new Date(challengeData.startDate + 'T00:00:00').getDate() + challengeData.totalDays - 1
+                        new Date(challengeData.startDate + 'T00:00:00').getDate() + challengeData.days - 1
                       )),
                       'MMMM d, yyyy'
                     )}
@@ -1221,7 +1265,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
             <Button
               size={{ base: "md", md: "md" }}
               variant="outline"
-              onClick={handleResetClick}
+              onClick={() => setShowResetModal(true)}
               borderColor="red.400"
               borderWidth="2px"
               color="red.400"
@@ -1280,7 +1324,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                   ✍️ Session Notes
                 </Text>
                 <VStack align="stretch" spacing={3}>
-                  {sortedNotes.map((note, index) => (
+                  {sortedNotes.map(([date, note], index) => (
                     <Box 
                       key={index} 
                       p={3}
@@ -1304,16 +1348,16 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                             fontSize="sm"
                             letterSpacing="wide"
                           >
-                            {format(parseISO(note.date + 'T00:00:00'), 'MMMM d, yyyy')}
+                            {format(parseISO(date + 'T00:00:00'), 'MMMM d, yyyy')}
                           </Text>
-                          <Text color="whiteAlpha.900" fontSize="xs" wordBreak="break-word">{note.note}</Text>
+                          <Text color="whiteAlpha.900" fontSize="xs" wordBreak="break-word">{note}</Text>
                         </Box>
                         <Flex gap={2} flexShrink={0}>
                           <IconButton
                             icon={<EditIcon />}
                             aria-label="Edit note"
                             size="sm"
-                            onClick={() => handleEditNote(note.date, note.note)}
+                            onClick={() => handleEditNote(date, note)}
                             variant="ghost"
                             color="white"
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -1324,7 +1368,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                             icon={<DeleteIcon />}
                             aria-label="Remove date"
                             size="sm"
-                            onClick={() => handleDeleteNote(note.date)}
+                            onClick={() => handleDeleteNote(date)}
                             variant="ghost"
                             color="white"
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -1529,7 +1573,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
               Cancel
             </Button>
             <Button 
-              onClick={confirmReset}
+              onClick={handleReset}
               bgGradient="linear(to-r, red.500, red.600)"
               color="white"
               _hover={{
@@ -1635,7 +1679,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
                 </Text>
                 <NumberInput
                   value={newDuration}
-                  onChange={(_, value) => setNewDuration(value)}
+                  onChange={(_, value) => setNewDuration(value || 0)}
                   min={completedDays}
                   max={365}
                   bg="whiteAlpha.200"
@@ -1687,7 +1731,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
       <ChatAssistant
         streak={currentStreak}
         completedDays={completedDays}
-        totalDays={challengeData.totalDays}
+        totalDays={challengeData.days}
         userName={userName}
         notes={challengeData.notes}
       />

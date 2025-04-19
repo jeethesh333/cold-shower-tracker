@@ -34,25 +34,27 @@ interface ChatAssistantProps {
   completedDays: number;
   totalDays: number;
   userName?: string;
-  notes: Array<{ date: string; note: string }>;
+  notes: Record<string, string>;
 }
 
 const ChatAssistant: React.FC<ChatAssistantProps> = ({
   streak,
   completedDays,
   totalDays,
-  userName = 'User',
-  notes = [],
+  userName,
+  notes = {},
 }) => {
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const savedMessages = localStorage.getItem('chatMessages');
-    return savedMessages ? JSON.parse(savedMessages) : [];
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+
+  // Reset messages when challenge data changes
+  useEffect(() => {
+    setMessages([]);
+  }, [totalDays, userName]); // These props will change when challenge is reset
 
   // Scroll to bottom when chat opens
   useEffect(() => {
@@ -77,48 +79,37 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({
     const progress = (completedDays / totalDays) * 100;
     const daysLeft = totalDays - completedDays;
     
-    // Sort notes by date, most recent first
-    const sortedNotes = notes
+    const sortedNotes = Object.entries(notes)
+      .map(([date, note]) => ({ date, note }))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     const notesContext = sortedNotes.length > 0
-      ? `\nComplete session history:
-${sortedNotes.map(note => `Date: ${note.date}
-Experience: ${note.note}
----`).join('\n')}`
-      : '\nNo session notes available yet.';
-    
-    return `
-You are a friendly and motivational AI assistant for a cold shower challenge app. 
-You are talking to ${userName}, please address them by their name occasionally to make the conversation more personal.
-${userName} is currently on day ${completedDays} of a ${totalDays} day challenge.
-They have completed ${progress.toFixed(1)}% of the challenge.
-${streak > 0 ? `They are on a ${streak} day streak.` : 'They have not started a streak yet.'}
-${daysLeft > 0 ? `They have ${daysLeft} days left to complete the challenge.` : 'They have completed the challenge!'}
+      ? `\nRecent experiences:\n${sortedNotes.slice(0, 3).map(note => `${note.date}: ${note.note}`).join('\n')}`
+      : '\nNo previous sessions recorded yet.';
 
+    return `CORE INSTRUCTIONS:
+You are a supportive cold shower challenge assistant. Your responses must be:
+- Personal and direct
+- Encouraging and motivational
+- Focused on the individual's journey
+${userName ? `- Occasionally addressing them as "${userName}"` : '- STRICTLY avoiding any use of "User" or generic titles\n- Using only "you" and "your" for direct address'}
+
+CONTEXT:
+Progress: ${progress.toFixed(1)}% (Day ${completedDays} of ${totalDays})
+${streak > 0 ? `Active streak: ${streak} days` : 'Streak not yet started'}
+${daysLeft > 0 ? `Remaining: ${daysLeft} days` : 'Challenge completed!'}
 ${notesContext}
 
-Your role is to:
-1. Provide friendly conversation and support
-2. Offer daily motivation and encouragement
-3. Celebrate their progress and streaks
-4. Share cold shower benefits and tips when relevant
-5. Be empathetic about the challenges of cold showers
-6. Reference their session notes to:
-   - Track their progress over time
-   - Notice patterns in their experience
-   - Provide personalized advice based on their journey
-   - Highlight improvements and breakthroughs
-   - Address specific challenges they've mentioned
-   - Celebrate their achievements and milestones
+RESPONSE GUIDELINES:
+1. Keep responses concise and focused
+2. Celebrate progress and effort
+3. Provide practical cold shower tips when relevant
+4. Reference past experiences when applicable
+5. Maintain an encouraging tone
 
-Remember to:
-- Address ${userName} by their name occasionally to maintain a personal connection
-- Use their session notes to make the conversation relevant to their specific journey
-- Be encouraging and supportive, especially when discussing challenges
+${userName ? '' : 'CRITICAL: Never use the word "User" or any generic titles. Address them directly with "you" and "your".'}
 
-User message: ${userMessage}
-`;
+Current message: ${userMessage}`;
   };
 
   const sendMessage = async () => {
@@ -178,9 +169,16 @@ User message: ${userMessage}
         throw new Error('Invalid response format from API');
       }
       
+      let aiResponse = data.generations[0].text.trim();
+      
+      // Filter out any responses containing "User" when no username is provided
+      if (!userName && aiResponse.includes('User')) {
+        aiResponse = aiResponse.replace(/\b[Uu]ser\b/g, 'you');
+      }
+      
       const assistantMessage: Message = {
         role: 'assistant',
-        content: data.generations[0].text.trim(),
+        content: aiResponse,
         timestamp: new Date(),
       };
       
@@ -218,7 +216,6 @@ User message: ${userMessage}
 
   const handleNewChat = () => {
     setMessages([]);
-    localStorage.removeItem('chatMessages');
     toast({
       title: 'New Chat Started',
       description: 'Your conversation has been cleared.',
@@ -233,8 +230,8 @@ User message: ${userMessage}
       <Box
         as="button"
         position="fixed"
-        top={{ base: 16, md: 4 }}
-        right={{ base: 4, md: 16 }}
+        bottom={4}
+        right={4}
         bg="whiteAlpha.200"
         color="white"
         px={4}
@@ -360,7 +357,10 @@ User message: ${userMessage}
                     Cold Shower Assistant
                   </Text>
                   <Text color="whiteAlpha.800">
-                    Hi {userName}! I'm here to support you on your cold shower journey.
+                    {userName && userName !== 'User'
+                      ? `Hi ${userName}! I'm here to support you on your cold shower journey.`
+                      : "Hi! I'm here to support you on your cold shower journey."
+                    }
                     Ask me anything about cold showers, motivation, or just chat!
                   </Text>
                 </Box>
@@ -394,7 +394,6 @@ User message: ${userMessage}
                     </Box>
                     {message.role === 'user' && (
                       <Avatar
-                        name={userName}
                         bg="blue.300"
                         ml={2}
                         size="sm"
