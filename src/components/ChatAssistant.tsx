@@ -3,7 +3,6 @@ import {
   Box,
   Flex,
   Text,
-  Input,
   IconButton,
   VStack,
   HStack,
@@ -18,6 +17,7 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
+  Textarea,
 } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
 import { FaRobot, FaPaperPlane } from 'react-icons/fa';
@@ -416,22 +416,48 @@ Current message: ${userMessage}`;
             bg="blue.900"
           >
             <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-              <HStack width="100%" spacing={2}>
-                <Input
-                  placeholder="Type your message..."
+              <HStack width="100%" spacing={2} alignItems="flex-end">
+                <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
                   disabled={isLoading}
                   bg="whiteAlpha.200"
                   color="white"
-                  _placeholder={{ color: 'whiteAlpha.500' }}
                   _hover={{ bg: 'whiteAlpha.300' }}
                   _focus={{ bg: 'whiteAlpha.300', borderColor: 'blue.400' }}
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="off"
                   size={{ base: "md", md: "md" }}
+                  minH="40px"
+                  maxH="120px"
+                  resize="none"
+                  rows={1}
+                  overflow="hidden"
+                  sx={{
+                    '&::-webkit-scrollbar': {
+                      width: '4px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                      width: '6px',
+                      background: 'whiteAlpha.100',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                      background: 'whiteAlpha.300',
+                      borderRadius: '24px',
+                    },
+                  }}
+                  onInput={(e) => {
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
+                  }}
                 />
                 <IconButton
                   aria-label="Send message"
@@ -442,6 +468,7 @@ Current message: ${userMessage}`;
                   isLoading={isLoading}
                   type="submit"
                   size={{ base: "md", md: "md" }}
+                  height="40px"
                 />
               </HStack>
             </form>
