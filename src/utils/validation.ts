@@ -1,4 +1,4 @@
-import { format, isValid, parseISO } from 'date-fns'
+import { isValid, parseISO } from 'date-fns'
 import { ChallengeData } from '../types'
 
 export interface ValidationResult {
@@ -23,54 +23,56 @@ export function validateCompletedDay(date: string, startDate: string, totalDays:
   return dayDifference >= 0 && dayDifference < totalDays
 }
 
-export function validateChallengeData(data: any): ValidationResult {
+export function validateChallengeData(data: unknown): ValidationResult {
   const errors: string[] = []
   let sanitizedData: ChallengeData | null = null
 
   try {
     // Check if data is null or undefined
-    if (!data) {
+    if (!data || typeof data !== 'object') {
       errors.push('No challenge data found')
       return { isValid: false, data: null, errors }
     }
 
+    const challengeData = data as any
+
     // Validate required fields
-    const requiredFields = ['days', 'startDate', 'userName', 'completedDays', 'notes']
+    const requiredFields = ['days', 'startDate', 'userName', 'completedDays', 'notes', 'lastLoggedDate']
     for (const field of requiredFields) {
-      if (!(field in data)) {
+      if (!(field in challengeData)) {
         errors.push(`Missing required field: ${field}`)
       }
     }
 
     // Validate data types and ranges
-    if (typeof data.days !== 'number' || data.days < 10 || data.days > 365) {
+    if (typeof challengeData.days !== 'number' || challengeData.days < 10 || challengeData.days > 365) {
       errors.push('Invalid challenge duration')
-      data.days = Math.max(10, Math.min(365, data.days || 10))
+      challengeData.days = Math.max(10, Math.min(365, challengeData.days || 10))
     }
 
-    if (typeof data.startDate !== 'string' || !Date.parse(data.startDate)) {
+    if (typeof challengeData.startDate !== 'string' || !isValidDateString(challengeData.startDate)) {
       errors.push('Invalid start date')
-      data.startDate = new Date().toISOString()
+      challengeData.startDate = new Date().toISOString().split('T')[0]
     }
 
-    if (typeof data.userName !== 'string' || data.userName.trim().length === 0) {
+    if (typeof challengeData.userName !== 'string' || challengeData.userName.trim().length === 0) {
       errors.push('Invalid user name')
-      data.userName = 'Anonymous'
+      challengeData.userName = 'Anonymous'
     }
 
-    if (!Array.isArray(data.completedDays)) {
+    if (!Array.isArray(challengeData.completedDays)) {
       errors.push('Invalid completed days format')
-      data.completedDays = []
+      challengeData.completedDays = []
     }
 
-    if (typeof data.notes !== 'object' || data.notes === null) {
+    if (typeof challengeData.notes !== 'object' || challengeData.notes === null) {
       errors.push('Invalid notes format')
-      data.notes = {}
+      challengeData.notes = {}
     }
 
     // Validate completed days format
-    data.completedDays = data.completedDays.filter((day: string) => {
-      const isValid = typeof day === 'string' && Date.parse(day)
+    challengeData.completedDays = challengeData.completedDays.filter((day: string) => {
+      const isValid = isValidDateString(day)
       if (!isValid) {
         errors.push(`Invalid completed day format: ${day}`)
       }
@@ -79,23 +81,30 @@ export function validateChallengeData(data: any): ValidationResult {
 
     // Validate notes format
     const validNotes: Record<string, string> = {}
-    Object.entries(data.notes).forEach(([date, note]) => {
-      if (Date.parse(date) && typeof note === 'string') {
+    Object.entries(challengeData.notes).forEach(([date, note]) => {
+      if (isValidDateString(date) && typeof note === 'string') {
         validNotes[date] = note
       } else {
         errors.push(`Invalid note format for date: ${date}`)
       }
     })
-    data.notes = validNotes
+    challengeData.notes = validNotes
 
-    // If we have any data after validation, consider it valid
+    // Validate lastLoggedDate
+    if (challengeData.lastLoggedDate !== null && 
+        (typeof challengeData.lastLoggedDate !== 'string' || !isValidDateString(challengeData.lastLoggedDate))) {
+      errors.push('Invalid last logged date')
+      challengeData.lastLoggedDate = null
+    }
+
+    // Create sanitized data
     sanitizedData = {
-      days: data.days,
-      startDate: data.startDate,
-      userName: data.userName.trim(),
-      completedDays: data.completedDays,
-      notes: data.notes,
-      lastLoggedDate: data.lastLoggedDate || null
+      days: challengeData.days,
+      startDate: challengeData.startDate,
+      userName: challengeData.userName.trim(),
+      completedDays: challengeData.completedDays,
+      notes: challengeData.notes,
+      lastLoggedDate: challengeData.lastLoggedDate
     }
 
     return {
@@ -108,6 +117,21 @@ export function validateChallengeData(data: any): ValidationResult {
     return { isValid: false, data: null, errors }
   }
 }
+
+export const createInitialChallengeData = (
+  days: number,
+  startDate: string,
+  userName: string
+): ChallengeData => {
+  return {
+    days,
+    startDate,
+    userName,
+    completedDays: [],
+    notes: {},
+    lastLoggedDate: null
+  };
+};
 
 export function sanitizeChallengeData(data: ChallengeData): ChallengeData {
   return {

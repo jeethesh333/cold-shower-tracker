@@ -4,11 +4,12 @@ export interface SessionNote {
 }
 
 export interface ChallengeData {
+  days: number;
   startDate: string;
-  totalDays: number;
-  completedDates: string[];
-  notes: SessionNote[];
   userName: string;
+  completedDays: string[];
+  notes: Record<string, string>;
+  lastLoggedDate: string | null;
 }
 
 export interface MotivationalQuote {

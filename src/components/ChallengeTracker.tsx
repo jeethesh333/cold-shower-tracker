@@ -62,12 +62,6 @@ interface ChallengeTrackerProps {
   onReset: () => void
 }
 
-interface ChallengeGridProps {
-  challengeData: ChallengeData
-  onEditNote: (date: string, note: string) => void
-  onDeleteDate: (date: string) => void
-}
-
 const motivationalQuotes = [
   { text: "Growth begins at the end of your comfort zone", author: "Neale Donald Walsch" },
   { text: "Do something today that your future self will thank you for", author: "Sean Patrick Flanery" },
@@ -159,6 +153,11 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
     const saved = localStorage.getItem('userName');
     return saved ? titleCase(saved) : 'User';
   });
+
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = format(today, 'yyyy-MM-dd');
 
   useEffect(() => {
     const handleResize = () => {
@@ -400,12 +399,13 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
   }
 
   const handleLogPastDate = () => {
-    const pastDate = selectedPastDate
-    const startDateObj = parseISO(challengeData.startDate + 'T00:00:00')
-    const selectedDateObj = parseISO(pastDate + 'T00:00:00')
-    const today = new Date()
-    const endDateObj = new Date(startDateObj)
-    endDateObj.setDate(endDateObj.getDate() + challengeData.days - 1)
+    const pastDate = selectedPastDate;
+    const startDateObj = parseISO(challengeData.startDate);
+    const selectedDateObj = parseISO(pastDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+    const endDateObj = new Date(startDateObj);
+    endDateObj.setDate(endDateObj.getDate() + challengeData.days - 1);
 
     if (isBefore(selectedDateObj, startDateObj)) {
       toast({
@@ -414,19 +414,8 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
         status: "error",
         duration: 3000,
         isClosable: true,
-      })
-      return
-    }
-
-    if (isAfter(selectedDateObj, endDateObj)) {
-      toast({
-        title: "Invalid date",
-        description: "Cannot log dates after the challenge end date",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      })
-      return
+      });
+      return;
     }
 
     if (isAfter(selectedDateObj, today)) {
@@ -436,8 +425,19 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
         status: "error",
         duration: 3000,
         isClosable: true,
-      })
-      return
+      });
+      return;
+    }
+
+    if (isAfter(selectedDateObj, endDateObj)) {
+      toast({
+        title: "Invalid date",
+        description: "Cannot log dates after the challenge end date",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
     }
 
     if (challengeData.completedDays.includes(pastDate)) {
@@ -447,15 +447,15 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
         status: "warning",
         duration: 3000,
         isClosable: true,
-      })
-      return
+      });
+      return;
     }
 
     onUpdate({
       ...challengeData,
       completedDays: [...challengeData.completedDays, pastDate],
       notes: pastDateNote ? { ...challengeData.notes, [pastDate]: pastDateNote } : challengeData.notes,
-    })
+    });
 
     toast({
       title: "Past date logged",
@@ -463,12 +463,12 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
       status: "success",
       duration: 3000,
       isClosable: true,
-    })
+    });
 
-    setSelectedPastDate('')
-    setPastDateNote('')
-    onPastDateClose()
-  }
+    setSelectedPastDate('');
+    setPastDateNote('');
+    onPastDateClose();
+  };
 
   const handleReset = async () => {
     setIsAnimating(true);
@@ -484,28 +484,27 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
   };
 
   const handleSaveNote = () => {
-    if (!note.trim()) return
+    if (!note.trim()) return;
     
-    const today = new Date().toISOString().split('T')[0]
-    const existingNote = challengeData.notes[today]
+    const today = new Date().toISOString().split('T')[0];
     
-    let updatedNotes = { ...challengeData.notes }
-    updatedNotes[today] = note.trim()
+    let updatedNotes = { ...challengeData.notes };
+    updatedNotes[today] = note.trim();
     
     onUpdate({
       ...challengeData,
       notes: updatedNotes
-    })
+    });
     
-    setIsNoteSaved(true)
+    setIsNoteSaved(true);
     toast({
       title: "Note saved",
       status: "success",
       duration: 2000,
-    })
+    });
     
-    setTimeout(() => setIsNoteSaved(false), 2000)
-  }
+    setTimeout(() => setIsNoteSaved(false), 2000);
+  };
 
   const handleDurationChange = () => {
     if (newDuration < 10) {
@@ -1143,22 +1142,6 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                 <Text fontWeight="semibold" color="white" fontSize={{ base: "sm", md: "md" }} letterSpacing="wide">
                   Today's Note
                 </Text>
-                <Tooltip label="Save note" placement="top">
-                  <IconButton
-                    aria-label="Save note"
-                    icon={<CheckIcon />}
-                    size="sm"
-                    colorScheme={isNoteSaved ? "green" : "blue"}
-                    variant="ghost"
-                    onClick={handleSaveNote}
-                    isDisabled={!note.trim()}
-                    _hover={{
-                      bg: "whiteAlpha.200",
-                      transform: "scale(1.05)"
-                    }}
-                    transition="all 0.2s"
-                  />
-                </Tooltip>
               </Flex>
               <Box
                 position="relative"
@@ -1167,8 +1150,8 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                 <Textarea
                   value={note}
                   onChange={(e) => {
-                    setNote(e.target.value)
-                    setIsNoteSaved(false)
+                    setNote(e.target.value);
+                    setIsNoteSaved(false);
                   }}
                   placeholder="How was your cold shower experience today? Share your thoughts, feelings, and any breakthroughs..."
                   minH="80px"
@@ -1603,8 +1586,13 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                 <Input
                   type="date"
                   value={selectedPastDate}
-                  onChange={(e) => setSelectedPastDate(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    if (e.target.value > todayStr) {
+                      return;
+                    }
+                    setSelectedPastDate(e.target.value);
+                  }}
+                  max={todayStr}
                   min={challengeData.startDate}
                   bg="whiteAlpha.200"
                   color="white"
