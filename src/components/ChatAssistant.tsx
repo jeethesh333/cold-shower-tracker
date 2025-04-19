@@ -345,17 +345,74 @@ Current message: ${userMessage}`;
             >
               {messages.length === 0 ? (
                 <Box textAlign="center" py={8}>
-                  <FaRobot size={40} style={{ margin: '0 auto 16px', opacity: 0.7 }} />
-                  <Text fontSize="lg" fontWeight="bold" mb={2}>
+                  <Box
+                    bg="whiteAlpha.200"
+                    borderRadius="full"
+                    width="80px"
+                    height="80px"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    margin="0 auto 16px"
+                    backdropFilter="blur(8px)"
+                  >
+                    <FaRobot size={40} color="#90CDF4" />
+                  </Box>
+                  <Text 
+                    fontSize="xl" 
+                    fontWeight="bold" 
+                    mb={2}
+                    bgGradient="linear(to-r, blue.200, blue.400)"
+                    bgClip="text"
+                  >
                     Cold Shower Assistant
                   </Text>
-                  <Text color="whiteAlpha.800">
+                  <Text color="whiteAlpha.800" mb={6}>
                     {userName && userName !== 'User'
                       ? `Hi ${userName}! I'm here to support you on your cold shower journey.`
                       : "Hi! I'm here to support you on your cold shower journey."
                     }
-                    Ask me anything about cold showers, motivation, or just chat!
                   </Text>
+                  <VStack spacing={3} align="stretch" px={4}>
+                    <Text color="whiteAlpha.700" fontSize="sm" mb={2}>
+                      Try asking me:
+                    </Text>
+                    {[
+                      "What are the benefits of cold showers?",
+                      "How can I stay motivated for my challenge?",
+                      "Tips for longer cold showers?"
+                    ].map((question, index) => (
+                      <Button
+                        key={index}
+                        variant="ghost"
+                        size="sm"
+                        color="blue.200"
+                        justifyContent="flex-start"
+                        fontWeight="normal"
+                        _hover={{
+                          bg: "whiteAlpha.200",
+                          transform: "translateX(4px)",
+                        }}
+                        leftIcon={
+                          <Box
+                            as="span"
+                            fontSize="xs"
+                            color="whiteAlpha.600"
+                            mr={1}
+                          >
+                            →
+                          </Box>
+                        }
+                        onClick={() => {
+                          setInput(question);
+                          sendMessage();
+                        }}
+                        transition="all 0.2s"
+                      >
+                        {question}
+                      </Button>
+                    ))}
+                  </VStack>
                 </Box>
               ) : (
                 messages.map((message, index) => (
