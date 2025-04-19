@@ -136,8 +136,14 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
   const [editedNoteText, setEditedNoteText] = useState('')
   const cancelRef = useRef<HTMLButtonElement>(null)
   const [userName] = useState(() => {
+    const titleCase = (str: string) => {
+      return str
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+    };
     const saved = localStorage.getItem('userName');
-    return saved || 'User';
+    return saved ? titleCase(saved) : 'User';
   });
 
   useEffect(() => {
@@ -772,7 +778,7 @@ const ChallengeTracker = ({ challengeData, setChallengeData, onReset }: Challeng
               letterSpacing="wide"
               textShadow="0 1px 2px rgba(0,0,0,0.1)"
             >
-              Let's do this!
+              Let's do this{challengeData.userName && challengeData.userName !== 'User' ? `, ${challengeData.userName}` : ''}! 💪
             </Text>
           </Box>
         </VStack>

@@ -8,6 +8,7 @@ export interface ChallengeData {
   totalDays: number;
   completedDates: string[];
   notes: SessionNote[];
+  userName: string;
 }
 
 export interface MotivationalQuote {

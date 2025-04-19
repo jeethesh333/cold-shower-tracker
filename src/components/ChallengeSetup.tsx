@@ -6,12 +6,16 @@ import { FaSnowflake } from 'react-icons/fa'
 import SnowfallEffect from './SnowfallEffect'
 
 interface ChallengeSetupProps {
-  onStart: (days: number, startDate: string) => void;
+  onStart: (days: number, startDate: string, userName: string) => void;
 }
 
 const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
   const [days, setDays] = useState(50)
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [userName, setUserName] = useState(() => {
+    const saved = localStorage.getItem('userName')
+    return saved || ''
+  })
   const [showSnowfall, setShowSnowfall] = useState(() => {
     const saved = localStorage.getItem('showSnowfall')
     return saved !== null ? JSON.parse(saved) : true
@@ -21,17 +25,32 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
     localStorage.setItem('showSnowfall', JSON.stringify(showSnowfall))
   }, [showSnowfall])
 
+  useEffect(() => {
+    if (userName) {
+      localStorage.setItem('userName', userName)
+    }
+  }, [userName])
+
   const handleStart = () => {
-    onStart(days, startDate)
+    const titleCase = (str: string) => {
+      return str
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+    };
+    
+    const finalUserName = userName.trim() ? titleCase(userName.trim()) : 'User'
+    localStorage.setItem('userName', finalUserName)
+    onStart(days, startDate, finalUserName)
   }
 
   // Use responsive values for container width
   const containerWidth = useBreakpointValue({
-    base: "90%",
-    sm: "70%",
-    md: "60%",
-    lg: "45%",
-    xl: "35%"
+    base: "85%",    // Mobile (reduced from 90%)
+    sm: "60%",      // Small tablets (reduced from 70%)
+    md: "50%",      // Tablets (reduced from 60%)
+    lg: "35%",      // Laptops (reduced from 45%)
+    xl: "30%"       // Large screens (reduced from 35%)
   })
 
   return (
@@ -119,7 +138,7 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
             w="100%"
             bg="whiteAlpha.200"
             backdropFilter="blur(10px)"
-            p={{ base: 6, sm: 8, md: 10 }}
+            p={{ base: 4, sm: 6, md: 8 }}
             borderRadius={{ base: "xl", md: "2xl" }}
             boxShadow="lg"
             transform="translateY(0)"
@@ -145,13 +164,13 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
               }
             }}
           >
-            <VStack spacing={{ base: 6, sm: 7, md: 8, lg: 10 }}>
+            <VStack spacing={{ base: 4, sm: 5, md: 6 }}>
               <Box textAlign="center" width="100%">
                 <Heading 
                   size={{ base: "md", md: "lg" }}
                   bgGradient="linear(to-r, blue.100, white)"
                   bgClip="text"
-                  mb={{ base: 2, md: 3 }}
+                  mb={{ base: 1, md: 2 }}
                   letterSpacing="tight"
                   fontWeight="extrabold"
                   textShadow="0 1px 5px rgba(0,0,0,0.2)"
@@ -159,12 +178,12 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
                   ❄️ Cold Shower Challenge
                 </Heading>
                 <Text 
-                  fontSize={{ base: "md", sm: "lg", md: "xl" }}
+                  fontSize={{ base: "sm", sm: "md", md: "lg" }}
                   fontWeight="medium"
                   color="whiteAlpha.900"
                   letterSpacing="wide"
                   textShadow="0 2px 4px rgba(0,0,0,0.2)"
-                  lineHeight="1.5"
+                  lineHeight="1.4"
                 >
                   Ready to roll?
                 </Text>
@@ -173,10 +192,46 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
               <FormControl>
                 <FormLabel 
                   color="whiteAlpha.900"
-                  fontSize={{ base: "sm", sm: "md", md: "lg" }}
+                  fontSize={{ base: "xs", sm: "sm", md: "md" }}
                   fontWeight="medium"
                   letterSpacing="wide"
-                  mb={2}
+                  mb={1}
+                >
+                  Your Name
+                </FormLabel>
+                <Input
+                  type="text"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  placeholder="Enter your name"
+                  bg="whiteAlpha.200"
+                  color="white"
+                  borderColor="whiteAlpha.300"
+                  borderRadius="xl"
+                  height={{ base: "40px", sm: "44px", md: "48px" }}
+                  fontSize={{ base: "sm", sm: "md", md: "md" }}
+                  _hover={{ 
+                    borderColor: "whiteAlpha.400",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+                  }}
+                  _focus={{ 
+                    borderColor: "blue.400",
+                    boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)"
+                  }}
+                  _placeholder={{ 
+                    color: "whiteAlpha.500"
+                  }}
+                  mb={4}
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel 
+                  color="whiteAlpha.900"
+                  fontSize={{ base: "xs", sm: "sm", md: "md" }}
+                  fontWeight="medium"
+                  letterSpacing="wide"
+                  mb={1}
                 >
                   Challenge Duration (Days)
                 </FormLabel>
@@ -190,27 +245,27 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
                   color="white"
                   borderColor="whiteAlpha.300"
                   borderRadius="xl"
-                  height={{ base: "48px", sm: "56px", md: "64px" }}
-                  fontSize={{ base: "md", sm: "lg", md: "xl" }}
+                  height={{ base: "40px", sm: "44px", md: "48px" }}
+                  fontSize={{ base: "sm", sm: "md", md: "md" }}
                   _hover={{ 
                     borderColor: "whiteAlpha.400",
                     boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
                   }}
                   _focus={{ 
                     borderColor: "blue.400",
-                    boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6), 0 4px 12px rgba(0,0,0,0.1)"
+                    boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)"
                   }}
-                  _placeholder={{ color: "whiteAlpha.600" }}
+                  mb={4}
                 />
               </FormControl>
 
               <FormControl>
                 <FormLabel 
                   color="whiteAlpha.900"
-                  fontSize={{ base: "sm", sm: "md", md: "lg" }}
+                  fontSize={{ base: "xs", sm: "sm", md: "md" }}
                   fontWeight="medium"
                   letterSpacing="wide"
-                  mb={2}
+                  mb={1}
                 >
                   Start Date
                 </FormLabel>
@@ -222,28 +277,29 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
                   color="white"
                   borderColor="whiteAlpha.300"
                   borderRadius="xl"
-                  height={{ base: "48px", sm: "56px", md: "64px" }}
-                  fontSize={{ base: "md", sm: "lg", md: "xl" }}
+                  height={{ base: "40px", sm: "44px", md: "48px" }}
+                  fontSize={{ base: "sm", sm: "md", md: "md" }}
                   _hover={{ 
                     borderColor: "whiteAlpha.400",
                     boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
                   }}
                   _focus={{ 
                     borderColor: "blue.400",
-                    boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6), 0 4px 12px rgba(0,0,0,0.1)"
+                    boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)"
                   }}
                   sx={{
                     colorScheme: "dark",
                     '&::-webkit-calendar-picker-indicator': {
                       filter: 'invert(1)',
                       cursor: 'pointer',
-                      transform: 'scale(1.2)',
+                      transform: 'scale(1.1)',
                       opacity: 0.8,
                       '&:hover': {
                         opacity: 1
                       }
                     }
                   }}
+                  mb={6}
                 />
               </FormControl>
 
@@ -252,8 +308,8 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
                 width="100%"
                 bgGradient="linear(to-r, blue.400, blue.600)"
                 color="white"
-                height={{ base: "48px", sm: "56px", md: "64px" }}
-                fontSize={{ base: "md", sm: "lg", md: "xl" }}
+                height={{ base: "40px", sm: "44px", md: "48px" }}
+                fontSize={{ base: "sm", sm: "md", md: "md" }}
                 fontWeight="semibold"
                 letterSpacing="wide"
                 borderRadius="xl"

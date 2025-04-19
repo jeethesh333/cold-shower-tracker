@@ -90,7 +90,8 @@ Experience: ${note.note}
     
     return `
 You are a friendly and motivational AI assistant for a cold shower challenge app. 
-The user is currently on day ${completedDays} of a ${totalDays} day challenge.
+You are talking to ${userName}, please address them by their name occasionally to make the conversation more personal.
+${userName} is currently on day ${completedDays} of a ${totalDays} day challenge.
 They have completed ${progress.toFixed(1)}% of the challenge.
 ${streak > 0 ? `They are on a ${streak} day streak.` : 'They have not started a streak yet.'}
 ${daysLeft > 0 ? `They have ${daysLeft} days left to complete the challenge.` : 'They have completed the challenge!'}
@@ -111,7 +112,10 @@ Your role is to:
    - Address specific challenges they've mentioned
    - Celebrate their achievements and milestones
 
-Remember to use their session notes to make the conversation more personal and relevant to their specific journey.
+Remember to:
+- Address ${userName} by their name occasionally to maintain a personal connection
+- Use their session notes to make the conversation relevant to their specific journey
+- Be encouraging and supportive, especially when discussing challenges
 
 User message: ${userMessage}
 `;
@@ -356,7 +360,7 @@ User message: ${userMessage}
                     Cold Shower Assistant
                   </Text>
                   <Text color="whiteAlpha.800">
-                    Hi! I'm here to support you on your cold shower journey.
+                    Hi {userName}! I'm here to support you on your cold shower journey.
                     Ask me anything about cold showers, motivation, or just chat!
                   </Text>
                 </Box>

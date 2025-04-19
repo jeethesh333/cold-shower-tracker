@@ -18,17 +18,19 @@ function App() {
     }
   }, [challengeData])
 
-  const handleStartChallenge = (days: number, startDate: string) => {
+  const handleStartChallenge = (days: number, startDate: string, userName: string) => {
     setChallengeData({
       startDate: startDate,
       totalDays: days,
       completedDates: [],
-      notes: []
+      notes: [],
+      userName: userName
     })
   }
 
   const handleReset = () => {
     localStorage.removeItem('challengeData')
+    localStorage.removeItem('userName')
     setChallengeData(null)
   }
 
