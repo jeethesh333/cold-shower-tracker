@@ -482,22 +482,6 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
     }
   };
 
-  const handleSaveNote = () => {
-    if (!note.trim()) return;
-    
-    const today = new Date().toISOString().split('T')[0];
-    
-    let updatedNotes = { ...challengeData.notes };
-    updatedNotes[today] = note.trim();
-    
-    onUpdate({
-      ...challengeData,
-      notes: updatedNotes
-    });
-    
-    setNote('')
-  };
-
   const handleDurationChange = () => {
     if (newDuration < 10) {
       toast({
@@ -506,8 +490,8 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
         status: "error",
         duration: 3000,
         isClosable: true,
-      })
-      return
+      });
+      return;
     }
 
     if (newDuration > 365) {
@@ -517,8 +501,8 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
         status: "error",
         duration: 3000,
         isClosable: true,
-      })
-      return
+      });
+      return;
     }
 
     if (newDuration < completedDays) {
@@ -528,14 +512,14 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
         status: "error",
         duration: 3000,
         isClosable: true,
-      })
-      return
+      });
+      return;
     }
 
     onUpdate({
       ...challengeData,
       days: newDuration
-    })
+    });
 
     toast({
       title: "Challenge duration updated",
@@ -543,14 +527,14 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
       status: "success",
       duration: 3000,
       isClosable: true,
-    })
+    });
 
-    setShowDurationModal(false)
-  }
+    setShowDurationModal(false);
+  };
 
   const sortedNotes = Object.entries(challengeData.notes).sort(([prevDate], [nextDate]) => {
     return new Date(nextDate).getTime() - new Date(prevDate).getTime();
-  })
+  });
 
   const levelInfo = getLevelInfo(progress)
 
