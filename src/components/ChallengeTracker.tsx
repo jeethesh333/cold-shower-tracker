@@ -578,7 +578,8 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
 
   const sortedNotes = Object.entries(challengeData.notes)
     .map(([date, noteData]) => ({
-      ...noteData
+      ...noteData,
+      date
     }))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
