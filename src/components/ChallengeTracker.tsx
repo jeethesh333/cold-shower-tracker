@@ -800,7 +800,6 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                   color="whiteAlpha.900"
                   textShadow="0 2px 8px rgba(0,0,0,0.3)"
                   maxW="600px"
-                  mx="auto"
                   px={4}
                   fontStyle="italic"
                   lineHeight="1.6"
@@ -1309,6 +1308,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
               borderRadius="xl"
               boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
               mt={{ base: 4, lg: 0 }}
+              width="100%"
               sx={{
                 '&::-webkit-scrollbar': {
                   width: '6px',
@@ -1324,11 +1324,11 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                 },
               }}
             >
-              <Box p={5}>
+              <Box p={5} width="100%">
                 <Text fontWeight="semibold" fontSize="md" letterSpacing="wide" mb={3}>
                   ✍️ Session Notes
                 </Text>
-                <VStack align="stretch" spacing={3}>
+                <VStack align="stretch" spacing={3} width="100%">
                   {sortedNotes.map((noteData, index) => (
                     <Box 
                       key={index} 
@@ -1343,15 +1343,17 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                         boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
                       }}
                       boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+                      width="100%"
                     >
-                      <Grid templateColumns="1fr auto" gap={3} alignItems="start">
-                        <Box flex="1" minW="0">
-                          <Flex align="baseline" gap={3} mb={2}>
+                      <VStack align="stretch" width="100%" spacing={2}>
+                        <Flex justify="space-between" align="center" width="100%">
+                          <Flex align="baseline" gap={3}>
                             <Text 
                               fontWeight="semibold" 
                               color="white"
                               fontSize="sm"
                               letterSpacing="wide"
+                              flexShrink={0}
                             >
                               {formatDate(noteData.date)}
                             </Text>
@@ -1372,35 +1374,43 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                               )}
                             </VStack>
                           </Flex>
-                          <Text color="whiteAlpha.900" fontSize="xs" wordBreak="break-word">
-                            {noteData.note}
-                          </Text>
-                        </Box>
-                        <Flex gap={2} flexShrink={0}>
-                          <IconButton
-                            icon={<EditIcon />}
-                            aria-label="Edit note"
-                            size="sm"
-                            onClick={() => handleEditNote(noteData.date, noteData.note)}
-                            variant="ghost"
-                            color="white"
-                            _hover={{ bg: "whiteAlpha.200" }}
-                            borderRadius="lg"
-                            transition="all 0.2s"
-                          />
-                          <IconButton
-                            icon={<DeleteIcon />}
-                            aria-label="Remove date"
-                            size="sm"
-                            onClick={() => handleDeleteNote(noteData.date)}
-                            variant="ghost"
-                            color="white"
-                            _hover={{ bg: "whiteAlpha.200" }}
-                            borderRadius="lg"
-                            transition="all 0.2s"
-                          />
+                          <Flex gap={2} flexShrink={0}>
+                            <IconButton
+                              icon={<EditIcon />}
+                              aria-label="Edit note"
+                              size="sm"
+                              onClick={() => handleEditNote(noteData.date, noteData.note)}
+                              variant="ghost"
+                              color="white"
+                              _hover={{ bg: "whiteAlpha.200" }}
+                              borderRadius="lg"
+                              transition="all 0.2s"
+                            />
+                            <IconButton
+                              icon={<DeleteIcon />}
+                              aria-label="Remove date"
+                              size="sm"
+                              onClick={() => handleDeleteNote(noteData.date)}
+                              variant="ghost"
+                              color="white"
+                              _hover={{ bg: "whiteAlpha.200" }}
+                              borderRadius="lg"
+                              transition="all 0.2s"
+                            />
+                          </Flex>
                         </Flex>
-                      </Grid>
+                        <Text 
+                          color="whiteAlpha.900" 
+                          fontSize="xs" 
+                          wordBreak="break-word"
+                          whiteSpace="pre-wrap"
+                          width="95%"
+                          textAlign="justify"
+                          ml="0"
+                        >
+                          {noteData.note}
+                        </Text>
+                      </VStack>
                     </Box>
                   ))}
                 </VStack>
