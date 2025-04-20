@@ -1,15 +1,7 @@
-import { Box, Grid, Text, Tooltip, Menu, MenuButton, MenuList, MenuItem, Portal } from '@chakra-ui/react'
+import { Box, Grid, Text, Tooltip, Menu, MenuButton, MenuList, MenuItem, Portal, useMediaQuery } from '@chakra-ui/react'
 import { format, parseISO } from 'date-fns'
 import { DeleteIcon, EditIcon } from '@chakra-ui/icons'
-
-interface ChallengeData {
-  days: number
-  startDate: string
-  userName: string
-  completedDays: string[]
-  notes: Record<string, string>
-  lastLoggedDate: string | null
-}
+import { ChallengeData, SessionNote } from '../types'
 
 interface ChallengeGridProps {
   challengeData: ChallengeData
@@ -18,6 +10,8 @@ interface ChallengeGridProps {
 }
 
 const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGridProps) => {
+  const [isMobile] = useMediaQuery("(max-width: 768px)")
+
   const getOptimalColumns = (totalDays: number): number => {
     if (totalDays <= 7) return totalDays
     if (totalDays <= 14) return 7
@@ -27,9 +21,9 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
   }
 
   const handleEditClick = (date: string) => {
-    const note = challengeData.notes[date] || ''
-    if (onEditNote) {
-      onEditNote(date, note)
+    const noteData = challengeData.notes[date]
+    if (onEditNote && noteData) {
+      onEditNote(date, noteData.note)
     }
   }
 
@@ -75,6 +69,11 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
       >
         {Array.from({ length: challengeData.days }).map((_, index) => {
           const dayNumber = index + 1
+          const startDate = new Date(challengeData.startDate)
+          const cellDate = new Date(startDate)
+          cellDate.setDate(startDate.getDate() + index)
+          const cellDateStr = format(cellDate, 'MM/dd/yy')
+          
           const isCompleted = completedDays.some(date => {
             const dayOfChallenge = Math.floor((new Date(date).getTime() - new Date(challengeData.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1
             return dayOfChallenge === dayNumber
@@ -85,7 +84,7 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
             return dayOfChallenge === dayNumber
           })
 
-          const note = completedDate ? challengeData.notes[completedDate] : null
+          const note = completedDate ? challengeData.notes[completedDate]?.note : null
 
           return (
             <Box
@@ -103,93 +102,154 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
               }}
             >
               {isCompleted ? (
-                <Tooltip 
-                  label={
-                    <Box
-                      p={2}
-                      bg="rgba(0, 0, 0, 0.4)"
-                      borderRadius="md"
-                      backdropFilter="blur(8px)"
-                      border="1px solid rgba(255, 255, 255, 0.1)"
-                      boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-                    >
-                      <Text
-                        fontWeight="bold"
-                        color="blue.200"
-                        fontSize="sm"
-                        mb={note ? 1 : 0}
-                      >
-                        {format(parseISO(completedDate!), 'MMMM d, yyyy')}
-                      </Text>
-                      {note && (
-                        <Text
-                          color="whiteAlpha.900"
-                          fontSize="sm"
-                          whiteSpace="pre-wrap"
-                          maxW="300px"
+                <Menu gutter={0} placement="bottom-end" isLazy>
+                  {!isMobile && (
+                    <Tooltip 
+                      label={
+                        <Box
+                          p={2}
+                          bg="rgba(0, 0, 0, 0.4)"
+                          borderRadius="md"
+                          backdropFilter="blur(8px)"
+                          border="1px solid rgba(255, 255, 255, 0.1)"
+                          boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
                         >
-                          {note}
-                        </Text>
-                      )}
-                    </Box>
-                  }
-                  placement="top"
-                  hasArrow
-                  bg="transparent"
-                  p={0}
-                >
-                  <Menu gutter={0} placement="bottom-end" isLazy>
+                          <Text
+                            fontWeight="bold"
+                            color="blue.200"
+                            fontSize="sm"
+                            mb={note ? 1 : 0}
+                          >
+                            {format(parseISO(completedDate!), 'MM/dd/yy')}
+                          </Text>
+                          {note && (
+                            <Text
+                              color="whiteAlpha.900"
+                              fontSize="sm"
+                              whiteSpace="pre-wrap"
+                              maxW="300px"
+                            >
+                              {note}
+                            </Text>
+                          )}
+                        </Box>
+                      }
+                      placement="top"
+                      hasArrow
+                      bg="transparent"
+                      p={0}
+                    >
+                      <MenuButton as={Box} w="100%" h="100%">
+                        <Text fontWeight="bold">{dayNumber}</Text>
+                      </MenuButton>
+                    </Tooltip>
+                  )}
+                  {isMobile && (
                     <MenuButton as={Box} w="100%" h="100%">
                       <Text fontWeight="bold">{dayNumber}</Text>
                     </MenuButton>
-                    <Portal>
-                      <MenuList 
-                        bg="blackAlpha.500" 
-                        borderColor="whiteAlpha.200"
-                        zIndex={1000}
-                        minW="120px"
-                        boxShadow="0 4px 6px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1)"
-                        py={1}
-                        sx={{
-                          isolation: "isolate",
-                          backdropFilter: "blur(8px)"
-                        }}
+                  )}
+                  <Portal>
+                    <MenuList 
+                      bg="blackAlpha.500" 
+                      borderColor="whiteAlpha.200"
+                      zIndex={1000}
+                      minW="120px"
+                      boxShadow="0 4px 6px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1)"
+                      py={1}
+                      sx={{
+                        isolation: "isolate",
+                        backdropFilter: "blur(8px)"
+                      }}
+                    >
+                      {isMobile && (
+                        <MenuItem
+                          isDisabled
+                          bg="transparent"
+                          _hover={{ bg: "transparent" }}
+                          color="blue.200"
+                          fontWeight="bold"
+                          fontSize="sm"
+                        >
+                          {format(parseISO(completedDate!), 'MM/dd/yy')}
+                        </MenuItem>
+                      )}
+                      <MenuItem
+                        icon={<EditIcon />}
+                        onClick={() => handleEditClick(completedDate!)}
+                        bg="transparent"
+                        _hover={{ bg: "whiteAlpha.200" }}
+                        w="100%"
+                        px={3}
+                        py={2}
+                        color="whiteAlpha.900"
                       >
-                        <MenuItem
-                          icon={<EditIcon />}
-                          onClick={() => handleEditClick(completedDate!)}
-                          bg="transparent"
-                          _hover={{ bg: "whiteAlpha.200" }}
-                          w="100%"
-                          px={3}
-                          py={2}
-                          color="whiteAlpha.900"
-                        >
-                          Edit Note
-                        </MenuItem>
-                        <MenuItem
-                          icon={<DeleteIcon />}
-                          onClick={() => handleDeleteClick(completedDate!)}
-                          bg="transparent"
-                          _hover={{ bg: "whiteAlpha.200" }}
-                          color="red.300"
-                          w="100%"
-                          px={3}
-                          py={2}
-                        >
-                          Remove Day
-                        </MenuItem>
-                      </MenuList>
-                    </Portal>
-                  </Menu>
-                </Tooltip>
+                        Edit Note
+                      </MenuItem>
+                      <MenuItem
+                        icon={<DeleteIcon />}
+                        onClick={() => handleDeleteClick(completedDate!)}
+                        bg="transparent"
+                        _hover={{ bg: "whiteAlpha.200" }}
+                        color="red.300"
+                        w="100%"
+                        px={3}
+                        py={2}
+                      >
+                        Remove Day
+                      </MenuItem>
+                    </MenuList>
+                  </Portal>
+                </Menu>
               ) : (
-                <Text 
-                  color="whiteAlpha.600" 
-                  fontWeight="medium"
+                <Box
+                  w="100%"
+                  h="100%"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
                 >
-                  {dayNumber}
-                </Text>
+                  {!isMobile ? (
+                    <Tooltip
+                      label={cellDateStr}
+                      placement="top"
+                      hasArrow
+                      bg="rgba(0, 0, 0, 0.8)"
+                      color="white"
+                      fontSize="sm"
+                      px={2}
+                      py={1}
+                    >
+                      <Text 
+                        color="whiteAlpha.600" 
+                        fontWeight="medium"
+                      >
+                        {dayNumber}
+                      </Text>
+                    </Tooltip>
+                  ) : (
+                    <Menu>
+                      <MenuButton as={Text} 
+                        color="whiteAlpha.600" 
+                        fontWeight="medium"
+                      >
+                        {dayNumber}
+                      </MenuButton>
+                      <Portal>
+                        <MenuList
+                          bg="blackAlpha.500"
+                          borderColor="whiteAlpha.200"
+                          minW="auto"
+                          p={2}
+                        >
+                          <Text color="white" fontSize="sm">
+                            {cellDateStr}
+                          </Text>
+                        </MenuList>
+                      </Portal>
+                    </Menu>
+                  )}
+                </Box>
               )}
             </Box>
           )

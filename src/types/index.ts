@@ -1,6 +1,8 @@
 export interface SessionNote {
   date: string;
   note: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ChallengeData {
@@ -8,7 +10,7 @@ export interface ChallengeData {
   startDate: string;
   userName: string;
   completedDays: string[];
-  notes: Record<string, string>;
+  notes: Record<string, SessionNote>;
   lastLoggedDate: string | null;
 }
 

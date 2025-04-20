@@ -1,5 +1,5 @@
 import { isValid, parseISO } from 'date-fns'
-import { ChallengeData } from '../types'
+import { ChallengeData, SessionNote } from '../types'
 
 export interface ValidationResult {
   isValid: boolean
@@ -80,12 +80,37 @@ export function validateChallengeData(data: unknown): ValidationResult {
     })
 
     // Validate notes format
-    const validNotes: Record<string, string> = {}
+    const validNotes: Record<string, SessionNote> = {}
     Object.entries(challengeData.notes).forEach(([date, note]) => {
-      if (isValidDateString(date) && typeof note === 'string') {
-        validNotes[date] = note
+      if (isValidDateString(date)) {
+        const now = new Date().toISOString();
+        if (typeof note === 'string') {
+          // Convert old format to new format
+          validNotes[date] = {
+            date,
+            note,
+            createdAt: now,
+            updatedAt: now
+          }
+        } else if (typeof note === 'object' && note !== null) {
+          const noteObj = note as { note?: string; createdAt?: string; updatedAt?: string; timestamp?: string }
+          if (typeof noteObj.note === 'string') {
+            // Handle migration from old format (timestamp) to new format (createdAt/updatedAt)
+            const createdAt = noteObj.createdAt || noteObj.timestamp || now;
+            validNotes[date] = {
+              date,
+              note: noteObj.note,
+              createdAt,
+              updatedAt: noteObj.updatedAt || createdAt
+            }
+          } else {
+            errors.push(`Invalid note format for date: ${date}`)
+          }
+        } else {
+          errors.push(`Invalid note format for date: ${date}`)
+        }
       } else {
-        errors.push(`Invalid note format for date: ${date}`)
+        errors.push(`Invalid note date format: ${date}`)
       }
     })
     challengeData.notes = validNotes
@@ -134,16 +159,35 @@ export const createInitialChallengeData = (
 };
 
 export function sanitizeChallengeData(data: ChallengeData): ChallengeData {
+  const validNotes: Record<string, SessionNote> = {}
+  Object.entries(data.notes).forEach(([date, note]) => {
+    if (Date.parse(date)) {
+      const now = new Date().toISOString();
+      if (typeof note === 'string') {
+        validNotes[date] = {
+          date,
+          note,
+          createdAt: now,
+          updatedAt: now
+        }
+      } else if (typeof note === 'object' && note !== null && 'note' in note) {
+        const noteObj = note as { note: string; createdAt?: string; updatedAt?: string; timestamp?: string }
+        validNotes[date] = {
+          date,
+          note: noteObj.note,
+          createdAt: noteObj.createdAt || noteObj.timestamp || now,
+          updatedAt: noteObj.updatedAt || noteObj.createdAt || noteObj.timestamp || now
+        }
+      }
+    }
+  })
+
   return {
     days: Math.max(10, Math.min(365, data.days)),
     startDate: data.startDate,
     userName: data.userName.trim(),
     completedDays: data.completedDays.filter(day => Date.parse(day)),
-    notes: Object.fromEntries(
-      Object.entries(data.notes).filter(([date, note]) => 
-        Date.parse(date) && typeof note === 'string'
-      )
-    ),
+    notes: validNotes,
     lastLoggedDate: data.lastLoggedDate || null
   }
 } 

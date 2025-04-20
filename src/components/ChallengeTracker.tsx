@@ -46,15 +46,7 @@ import confetti from "canvas-confetti"
 import SnowfallEffect from './SnowfallEffect'
 import { FaSnowflake } from 'react-icons/fa'
 import ChatAssistant from './ChatAssistant'
-
-interface ChallengeData {
-  days: number
-  startDate: string
-  userName: string
-  completedDays: string[]
-  notes: Record<string, string>
-  lastLoggedDate: string | null
-}
+import { ChallengeData, SessionNote } from '../types'
 
 interface ChallengeTrackerProps {
   challengeData: ChallengeData
@@ -313,96 +305,120 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
         status: "warning",
         duration: 3000,
         isClosable: true,
-      })
-      return
+      });
+      return;
     }
 
     setIsAnimating(true);
-    const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]
-    setCurrentQuote(randomQuote)
-    setShowConfetti(true)
-    triggerConfetti()
+    const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+    setCurrentQuote(randomQuote);
+    setShowConfetti(true);
+    triggerConfetti();
 
     setTimeout(() => {
-      setShowConfetti(false)
-      setIsAnimating(false)
-    }, 5000)
+      setShowConfetti(false);
+      setIsAnimating(false);
+    }, 5000);
 
+    const now = new Date().toISOString();
     onUpdate({
       ...challengeData,
       completedDays: [...challengeData.completedDays, localDate],
-      notes: note ? { ...challengeData.notes, [localDate]: note } : challengeData.notes,
-    })
+      notes: {
+        ...challengeData.notes,
+        [localDate]: {
+          date: localDate,
+          note: note || '',
+          createdAt: now,
+          updatedAt: now
+        }
+      },
+    });
 
-    setNote('')
-  }
+    setNote('');
+  };
 
   const handleEditNote = (date: string, note: string) => {
-    setSelectedDate(date)
-    setEditedNoteText(note)
-    setIsEditModalOpen(true)
-  }
+    setSelectedDate(date);
+    setEditedNoteText(note);
+    setIsEditModalOpen(true);
+  };
 
   const handleSaveEdit = () => {
-    if (!selectedDate) return
+    if (!selectedDate) return;
 
-    const updatedNotes = { ...challengeData.notes }
-    updatedNotes[selectedDate] = editedNoteText
+    const updatedNotes = { ...challengeData.notes };
+    const existingNote = updatedNotes[selectedDate];
+    
+    // If the note hasn't changed, just close the modal
+    if (existingNote.note === editedNoteText) {
+      setIsEditModalOpen(false);
+      setSelectedDate(null);
+      setEditedNoteText('');
+      return;
+    }
+
+    updatedNotes[selectedDate] = {
+      date: selectedDate,
+      note: editedNoteText,
+      createdAt: existingNote?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
 
     onUpdate({
       ...challengeData,
       notes: updatedNotes
-    })
+    });
 
-    setIsEditModalOpen(false)
-    setSelectedDate(null)
-    setEditedNoteText('')
+    setIsEditModalOpen(false);
+    setSelectedDate(null);
+    setEditedNoteText('');
 
     toast({
       title: "Note updated",
       status: "success",
       duration: 2000,
       isClosable: true,
-    })
-  }
+    });
+  };
 
   const handleDeleteNote = (date: string) => {
-    setSelectedDate(date)
-    setIsDeleteAlertOpen(true)
-  }
+    setSelectedDate(date);
+    setIsDeleteAlertOpen(true);
+  };
 
   const confirmDelete = () => {
-    if (!selectedDate) return
+    if (!selectedDate) return;
 
     const updatedCompletedDays = challengeData.completedDays.filter(
       date => date !== selectedDate
-    )
-    const updatedNotes = { ...challengeData.notes }
-    delete updatedNotes[selectedDate]
+    );
+    const updatedNotes = { ...challengeData.notes };
+    delete updatedNotes[selectedDate];
 
     onUpdate({
       ...challengeData,
       completedDays: updatedCompletedDays,
       notes: updatedNotes
-    })
+    });
 
-    setIsDeleteAlertOpen(false)
-    setSelectedDate(null)
+    setIsDeleteAlertOpen(false);
+    setSelectedDate(null);
 
     toast({
       title: "Entry deleted",
       status: "info",
       duration: 2000,
       isClosable: true,
-    })
-  }
+    });
+  };
 
   const handleLogPastDate = () => {
     const pastDate = selectedPastDate;
     const startDateObj = parseISO(challengeData.startDate);
     const selectedDateObj = parseISO(pastDate);
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+    today.setHours(0, 0, 0, 0);
     const endDateObj = new Date(startDateObj);
     endDateObj.setDate(endDateObj.getDate() + challengeData.days - 1);
 
@@ -450,10 +466,19 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
       return;
     }
 
+    const now = new Date().toISOString();
     onUpdate({
       ...challengeData,
       completedDays: [...challengeData.completedDays, pastDate],
-      notes: pastDateNote ? { ...challengeData.notes, [pastDate]: pastDateNote } : challengeData.notes,
+      notes: {
+        ...challengeData.notes,
+        [pastDate]: {
+          date: pastDate,
+          note: pastDateNote || '',
+          createdAt: now,
+          updatedAt: now
+        }
+      },
     });
 
     toast({
@@ -472,9 +497,19 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
   const handleReset = async () => {
     setIsAnimating(true);
     try {
-      localStorage.removeItem('challengeData');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('chatMessages');
+      // Save the current snowfall setting
+      const snowfallSetting = localStorage.getItem('showSnowfall');
+      
+      // Clear all data
+      localStorage.clear();
+      
+      // Restore the snowfall setting
+      if (snowfallSetting !== null) {
+        localStorage.setItem('showSnowfall', snowfallSetting);
+      } else {
+        localStorage.setItem('showSnowfall', 'true');
+      }
+      
       onReset();
     } finally {
       setIsAnimating(false);
@@ -532,9 +567,20 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
     setShowDurationModal(false);
   };
 
-  const sortedNotes = Object.entries(challengeData.notes).sort(([prevDate], [nextDate]) => {
-    return new Date(nextDate).getTime() - new Date(prevDate).getTime();
-  });
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return format(date, 'MM/dd/yy h:mm a');
+  };
+
+  const formatDate = (date: string) => {
+    return format(parseISO(date), 'MM/dd/yy');
+  };
+
+  const sortedNotes = Object.entries(challengeData.notes)
+    .map(([date, noteData]) => ({
+      ...noteData
+    }))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const levelInfo = getLevelInfo(progress)
 
@@ -1073,21 +1119,21 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                   />
                 </Tooltip>
               </Box>
-              <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3} mt={4}>
+              <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(2, 1fr)" }} gap={3} mt={4}>
                 <Box>
                   <Text fontWeight="medium" color="whiteAlpha.700" fontSize="xs" mb={1} letterSpacing="wide">Start Date</Text>
                   <Text fontWeight="semibold" color="white" fontSize={{ base: "xs", md: "sm" }}>
-                    {format(new Date(challengeData.startDate + 'T00:00:00'), 'MMMM d, yyyy')}
+                    {format(new Date(challengeData.startDate + 'T00:00:00'), 'MM/dd/yy')}
                   </Text>
                 </Box>
-                <Box textAlign={{ base: "left", md: "right" }}>
+                <Box textAlign="right">
                   <Text fontWeight="medium" color="whiteAlpha.700" fontSize="xs" mb={1} letterSpacing="wide">End Date</Text>
                   <Text fontWeight="semibold" color="white" fontSize={{ base: "xs", md: "sm" }}>
                     {format(
                       new Date(new Date(challengeData.startDate + 'T00:00:00').setDate(
                         new Date(challengeData.startDate + 'T00:00:00').getDate() + challengeData.days - 1
                       )),
-                      'MMMM d, yyyy'
+                      'MM/dd/yy'
                     )}
                   </Text>
                 </Box>
@@ -1282,7 +1328,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                   ✍️ Session Notes
                 </Text>
                 <VStack align="stretch" spacing={3}>
-                  {sortedNotes.map(([date, note], index) => (
+                  {sortedNotes.map((noteData, index) => (
                     <Box 
                       key={index} 
                       p={3}
@@ -1299,23 +1345,42 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                     >
                       <Grid templateColumns="1fr auto" gap={3} alignItems="start">
                         <Box flex="1" minW="0">
-                          <Text 
-                            fontWeight="semibold" 
-                            color="white"
-                            mb={1}
-                            fontSize="sm"
-                            letterSpacing="wide"
-                          >
-                            {format(parseISO(date + 'T00:00:00'), 'MMMM d, yyyy')}
+                          <Flex align="baseline" gap={3} mb={2}>
+                            <Text 
+                              fontWeight="semibold" 
+                              color="white"
+                              fontSize="sm"
+                              letterSpacing="wide"
+                            >
+                              {formatDate(noteData.date)}
+                            </Text>
+                            <VStack align="flex-start" spacing={0}>
+                              <Text 
+                                fontSize="xs" 
+                                color="whiteAlpha.600"
+                              >
+                                Created on {formatTimestamp(noteData.createdAt)}
+                              </Text>
+                              {noteData.updatedAt !== noteData.createdAt && (
+                                <Text 
+                                  fontSize="xs" 
+                                  color="whiteAlpha.600"
+                                >
+                                  Last edited on {formatTimestamp(noteData.updatedAt)}
+                                </Text>
+                              )}
+                            </VStack>
+                          </Flex>
+                          <Text color="whiteAlpha.900" fontSize="xs" wordBreak="break-word">
+                            {noteData.note}
                           </Text>
-                          <Text color="whiteAlpha.900" fontSize="xs" wordBreak="break-word">{note}</Text>
                         </Box>
                         <Flex gap={2} flexShrink={0}>
                           <IconButton
                             icon={<EditIcon />}
                             aria-label="Edit note"
                             size="sm"
-                            onClick={() => handleEditNote(date, note)}
+                            onClick={() => handleEditNote(noteData.date, noteData.note)}
                             variant="ghost"
                             color="white"
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -1326,7 +1391,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                             icon={<DeleteIcon />}
                             aria-label="Remove date"
                             size="sm"
-                            onClick={() => handleDeleteNote(date)}
+                            onClick={() => handleDeleteNote(noteData.date)}
                             variant="ghost"
                             color="white"
                             _hover={{ bg: "whiteAlpha.200" }}
@@ -1418,6 +1483,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
               onClick={handleSaveEdit}
               bgGradient="linear(to-r, blue.400, blue.600)"
               color="white"
+              isDisabled={!selectedDate || !editedNoteText.trim() || challengeData.notes[selectedDate]?.note === editedNoteText}
               _hover={{
                 bgGradient: "linear(to-r, blue.500, blue.700)",
               }}
@@ -1643,7 +1709,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                 <NumberInput
                   value={newDuration}
                   onChange={(_, value) => setNewDuration(value || 0)}
-                  min={completedDays}
+                  min={Math.max(10, completedDays)}
                   max={365}
                   bg="whiteAlpha.200"
                   borderRadius="xl"
@@ -1662,11 +1728,9 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                     <NumberDecrementStepper color="white" borderColor="whiteAlpha.300" />
                   </NumberInputStepper>
                 </NumberInput>
-                {completedDays > 0 && (
-                  <Text fontSize="xs" color="whiteAlpha.700" mt={1}>
-                    Minimum duration is set to {completedDays} days (your completed days)
-                  </Text>
-                )}
+                <Text fontSize="xs" color="whiteAlpha.700" mt={1}>
+                  Minimum duration is 10 days
+                </Text>
               </Box>
             </VStack>
           </ModalBody>

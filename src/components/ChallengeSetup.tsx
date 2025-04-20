@@ -19,7 +19,11 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
   })
   const [showSnowfall, setShowSnowfall] = useState(() => {
     const saved = localStorage.getItem('showSnowfall')
-    return saved !== null ? JSON.parse(saved) : true
+    if (saved === null) {
+      localStorage.setItem('showSnowfall', 'true')
+      return true
+    }
+    return JSON.parse(saved)
   })
 
   const toast = useToast()
@@ -35,6 +39,17 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
   }, [userName])
 
   const handleStart = () => {
+    if (!userName.trim()) {
+      toast({
+        title: "Name required",
+        description: "Please enter your name to start the challenge",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     if (days < 10) {
       toast({
         title: "Invalid duration",
@@ -42,8 +57,8 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
         status: "error",
         duration: 3000,
         isClosable: true,
-      })
-      return
+      });
+      return;
     }
 
     if (days > 365) {
@@ -53,8 +68,8 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
         status: "error",
         duration: 3000,
         isClosable: true,
-      })
-      return
+      });
+      return;
     }
 
     const titleCase = (str: string) => {
@@ -64,10 +79,10 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
         .join(' ');
     };
     
-    const finalUserName = userName.trim() ? titleCase(userName.trim()) : 'User'
-    localStorage.setItem('userName', finalUserName)
-    onStart(days, startDate, finalUserName)
-  }
+    const finalUserName = titleCase(userName.trim());
+    localStorage.setItem('userName', finalUserName);
+    onStart(days, startDate, finalUserName);
+  };
 
   // Use responsive values for container width
   const containerWidth = useBreakpointValue({
@@ -247,6 +262,7 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
                     color: "whiteAlpha.500"
                   }}
                   mb={4}
+                  required
                 />
               </FormControl>
 

@@ -22,6 +22,7 @@ import {
 import { CloseIcon } from '@chakra-ui/icons';
 import { FaRobot, FaPaperPlane } from 'react-icons/fa';
 import { COHERE_API_KEY, isValidApiKey } from '../config';
+import { SessionNote } from '../types';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -34,7 +35,7 @@ interface ChatAssistantProps {
   completedDays: number;
   totalDays: number;
   userName?: string;
-  notes: Record<string, string>;
+  notes: Record<string, SessionNote>;
 }
 
 const ChatAssistant: React.FC<ChatAssistantProps> = ({
@@ -80,7 +81,7 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({
     const daysLeft = totalDays - completedDays;
     
     const sortedNotes = Object.entries(notes)
-      .map(([date, note]) => ({ date, note }))
+      .map(([date, noteData]) => ({ date, note: noteData.note }))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     const notesContext = sortedNotes.length > 0
