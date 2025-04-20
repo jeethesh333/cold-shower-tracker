@@ -35,12 +35,13 @@ import {
   AlertDialogHeader,
   AlertDialogContent,
   AlertDialogOverlay,
+  HStack,
 } from '@chakra-ui/react'
 import { Global as EmotionGlobal } from '@emotion/react'
 import { useState, useEffect, useRef } from 'react'
 import ReactConfetti from 'react-confetti'
 import { differenceInDays, format, isAfter, isBefore, parseISO } from 'date-fns'
-import { DeleteIcon, EditIcon, CalendarIcon, SettingsIcon } from '@chakra-ui/icons'
+import { DeleteIcon, EditIcon, CalendarIcon, SettingsIcon, CloseIcon } from '@chakra-ui/icons'
 import ChallengeGrid from './ChallengeGrid'
 import confetti from "canvas-confetti"
 import SnowfallEffect from './SnowfallEffect'
@@ -143,6 +144,13 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
     };
     const saved = localStorage.getItem('userName');
     return saved ? titleCase(saved) : 'User';
+  });
+  const [dateFilter, setDateFilter] = useState<{
+    startDate: string | null;
+    endDate: string | null;
+  }>({
+    startDate: null,
+    endDate: null,
   });
 
   // Get today's date in YYYY-MM-DD format
@@ -582,6 +590,23 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
       date
     }))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const filteredNotes = sortedNotes.filter(noteData => {
+    if (!dateFilter.startDate && !dateFilter.endDate) return true;
+    
+    const noteDate = new Date(noteData.date);
+    const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null;
+    const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null;
+    
+    if (startDate && endDate) {
+      return noteDate >= startDate && noteDate <= endDate;
+    } else if (startDate) {
+      return noteDate >= startDate;
+    } else if (endDate) {
+      return noteDate <= endDate;
+    }
+    return true;
+  });
 
   const levelInfo = getLevelInfo(progress)
 
@@ -1325,11 +1350,68 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
               }}
             >
               <Box p={5} width="100%">
-                <Text fontWeight="semibold" fontSize="md" letterSpacing="wide" mb={3}>
-                  ✍️ Session Notes
-                </Text>
-                <VStack align="stretch" spacing={3} width="100%">
-                  {sortedNotes.map((noteData, index) => (
+                <VStack align="stretch" spacing={4}>
+                  <Text fontWeight="semibold" fontSize="md" letterSpacing="wide">
+                    ✍️ Session Notes
+                  </Text>
+                  <Box 
+                    bg="whiteAlpha.200" 
+                    p={3} 
+                    borderRadius="xl"
+                    borderWidth="1px"
+                    borderColor="whiteAlpha.300"
+                    _hover={{
+                      borderColor: "whiteAlpha.400",
+                      bg: "whiteAlpha.300"
+                    }}
+                    transition="all 0.2s"
+                  >
+                    <HStack spacing={3} align="center">
+                      <Input
+                        type="date"
+                        size="sm"
+                        width="auto"
+                        value={dateFilter.startDate || ''}
+                        onChange={(e) => setDateFilter(prev => ({ ...prev, startDate: e.target.value }))}
+                        bg="whiteAlpha.100"
+                        color="white"
+                        borderColor="whiteAlpha.300"
+                        _hover={{ borderColor: "whiteAlpha.400" }}
+                        _focus={{ borderColor: "blue.400" }}
+                        max={dateFilter.endDate || undefined}
+                        borderRadius="lg"
+                      />
+                      <Text color="whiteAlpha.700" fontWeight="medium">to</Text>
+                      <Input
+                        type="date"
+                        size="sm"
+                        width="auto"
+                        value={dateFilter.endDate || ''}
+                        onChange={(e) => setDateFilter(prev => ({ ...prev, endDate: e.target.value }))}
+                        bg="whiteAlpha.100"
+                        color="white"
+                        borderColor="whiteAlpha.300"
+                        _hover={{ borderColor: "whiteAlpha.400" }}
+                        _focus={{ borderColor: "blue.400" }}
+                        min={dateFilter.startDate || undefined}
+                        borderRadius="lg"
+                      />
+                      <IconButton
+                        aria-label="Clear filter"
+                        icon={<CloseIcon />}
+                        size="sm"
+                        onClick={() => setDateFilter({ startDate: null, endDate: null })}
+                        variant="ghost"
+                        color="white"
+                        _hover={{ bg: "whiteAlpha.200" }}
+                        isDisabled={!dateFilter.startDate && !dateFilter.endDate}
+                        ml="auto"
+                      />
+                    </HStack>
+                  </Box>
+                </VStack>
+                <VStack align="stretch" spacing={3} width="100%" mt={4}>
+                  {filteredNotes.map((noteData, index) => (
                     <Box 
                       key={index} 
                       p={3}
