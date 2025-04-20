@@ -1356,46 +1356,75 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                   </Text>
                   <Box 
                     bg="whiteAlpha.200" 
-                    p={3} 
+                    p={4} 
                     borderRadius="xl"
                     borderWidth="1px"
                     borderColor="whiteAlpha.300"
+                    position="relative"
+                    overflow="hidden"
+                    transition="all 0.2s"
                     _hover={{
                       borderColor: "whiteAlpha.400",
-                      bg: "whiteAlpha.300"
+                      bg: "whiteAlpha.300",
+                      transform: "translateY(-1px)",
+                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                      _before: {
+                        opacity: 1
+                      }
                     }}
-                    transition="all 0.2s"
+                    _before={{
+                      content: '""',
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      bgGradient: "linear(to-br, whiteAlpha.50, transparent)",
+                      opacity: 0,
+                      transition: "opacity 0.3s"
+                    }}
                   >
-                    <HStack spacing={3} align="center">
-                      <Input
-                        type="date"
-                        size="sm"
-                        width="auto"
-                        value={dateFilter.startDate || ''}
-                        onChange={(e) => setDateFilter(prev => ({ ...prev, startDate: e.target.value }))}
-                        bg="whiteAlpha.100"
-                        color="white"
-                        borderColor="whiteAlpha.300"
-                        _hover={{ borderColor: "whiteAlpha.400" }}
-                        _focus={{ borderColor: "blue.400" }}
-                        max={dateFilter.endDate || undefined}
-                        borderRadius="lg"
-                      />
-                      <Text color="whiteAlpha.700" fontWeight="medium">to</Text>
-                      <Input
-                        type="date"
-                        size="sm"
-                        width="auto"
-                        value={dateFilter.endDate || ''}
-                        onChange={(e) => setDateFilter(prev => ({ ...prev, endDate: e.target.value }))}
-                        bg="whiteAlpha.100"
-                        color="white"
-                        borderColor="whiteAlpha.300"
-                        _hover={{ borderColor: "whiteAlpha.400" }}
-                        _focus={{ borderColor: "blue.400" }}
-                        min={dateFilter.startDate || undefined}
-                        borderRadius="lg"
-                      />
+                    <HStack spacing={4} align="center">
+                      <Box flex="1">
+                        <Text fontSize="xs" color="whiteAlpha.700" mb={1} fontWeight="medium">Start Date</Text>
+                        <Input
+                          type="date"
+                          size="sm"
+                          width="100%"
+                          value={dateFilter.startDate || ''}
+                          onChange={(e) => setDateFilter(prev => ({ ...prev, startDate: e.target.value }))}
+                          bg="whiteAlpha.100"
+                          color="white"
+                          borderColor="whiteAlpha.300"
+                          _hover={{ borderColor: "whiteAlpha.400" }}
+                          _focus={{ 
+                            borderColor: "blue.400",
+                            boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)"
+                          }}
+                          max={dateFilter.endDate || undefined}
+                          borderRadius="lg"
+                        />
+                      </Box>
+                      <Box flex="1">
+                        <Text fontSize="xs" color="whiteAlpha.700" mb={1} fontWeight="medium">End Date</Text>
+                        <Input
+                          type="date"
+                          size="sm"
+                          width="100%"
+                          value={dateFilter.endDate || ''}
+                          onChange={(e) => setDateFilter(prev => ({ ...prev, endDate: e.target.value }))}
+                          bg="whiteAlpha.100"
+                          color="white"
+                          borderColor="whiteAlpha.300"
+                          _hover={{ borderColor: "whiteAlpha.400" }}
+                          _focus={{ 
+                            borderColor: "blue.400",
+                            boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)"
+                          }}
+                          min={dateFilter.startDate || undefined}
+                          borderRadius="lg"
+                        />
+                      </Box>
                       <IconButton
                         aria-label="Clear filter"
                         icon={<CloseIcon />}
@@ -1403,9 +1432,14 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                         onClick={() => setDateFilter({ startDate: null, endDate: null })}
                         variant="ghost"
                         color="white"
-                        _hover={{ bg: "whiteAlpha.200" }}
+                        _hover={{ 
+                          bg: "whiteAlpha.200",
+                          transform: "scale(1.05)"
+                        }}
                         isDisabled={!dateFilter.startDate && !dateFilter.endDate}
-                        ml="auto"
+                        alignSelf="flex-end"
+                        mb={1}
+                        transition="all 0.2s"
                       />
                     </HStack>
                   </Box>
