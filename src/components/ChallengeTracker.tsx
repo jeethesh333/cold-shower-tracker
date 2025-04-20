@@ -46,7 +46,7 @@ import confetti from "canvas-confetti"
 import SnowfallEffect from './SnowfallEffect'
 import { FaSnowflake } from 'react-icons/fa'
 import ChatAssistant from './ChatAssistant'
-import { ChallengeData, SessionNote } from '../types'
+import { ChallengeData } from '../types'
 
 interface ChallengeTrackerProps {
   challengeData: ChallengeData

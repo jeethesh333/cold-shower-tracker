@@ -1,7 +1,7 @@
-import { Box, Grid, Text, Tooltip, Menu, MenuButton, MenuList, MenuItem, Portal, useMediaQuery } from '@chakra-ui/react'
+import { Box, Grid, Text, Tooltip, Menu, MenuButton, MenuList, MenuItem, Portal, useMediaQuery, useBreakpointValue } from '@chakra-ui/react'
 import { format, parseISO } from 'date-fns'
 import { DeleteIcon, EditIcon } from '@chakra-ui/icons'
-import { ChallengeData, SessionNote } from '../types'
+import { ChallengeData } from '../types'
 
 interface ChallengeGridProps {
   challengeData: ChallengeData
