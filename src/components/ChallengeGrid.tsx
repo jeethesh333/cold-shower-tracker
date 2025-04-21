@@ -1,7 +1,8 @@
 import { Box, Grid, Text, Tooltip, Menu, MenuButton, MenuList, MenuItem, Portal, useMediaQuery } from '@chakra-ui/react'
 import { format, parseISO } from 'date-fns'
-import { DeleteIcon, EditIcon } from '@chakra-ui/icons'
+import { EditIcon, DeleteIcon } from '@chakra-ui/icons'
 import { ChallengeData } from '../types'
+import { addDays } from 'date-fns'
 
 interface ChallengeGridProps {
   challengeData: ChallengeData
@@ -69,10 +70,9 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
       >
         {Array.from({ length: challengeData.days }).map((_, index) => {
           const dayNumber = index + 1
-          const startDate = new Date(challengeData.startDate)
-          const cellDate = new Date(startDate)
-          cellDate.setDate(startDate.getDate() + index)
-          const cellDateStr = format(cellDate, 'MM/dd/yy')
+          const startDateObj = parseISO(challengeData.startDate)
+          const cellDate     = addDays(startDateObj, index)
+          const cellDateStr  = format(cellDate, 'MM/dd/yy')
           
           const isCompleted = completedDays.some(date => {
             const dayOfChallenge = Math.floor((new Date(date).getTime() - new Date(challengeData.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1
@@ -104,7 +104,7 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
               {isCompleted ? (
                 <Menu gutter={0} placement="bottom-end" isLazy>
                   {!isMobile && (
-                    <Tooltip 
+                    <Tooltip
                       label={
                         <Box
                           p={2}
@@ -120,7 +120,7 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
                             fontSize="sm"
                             mb={note ? 1 : 0}
                           >
-                            {format(parseISO(completedDate!), 'MM/dd/yy')}
+                            {cellDateStr}
                           </Text>
                           {note && (
                             <Text
@@ -171,7 +171,7 @@ const ChallengeGrid = ({ challengeData, onEditNote, onDeleteDate }: ChallengeGri
                           fontWeight="bold"
                           fontSize="sm"
                         >
-                          {format(parseISO(completedDate!), 'MM/dd/yy')}
+                          {cellDateStr}
                         </MenuItem>
                       )}
                       <MenuItem

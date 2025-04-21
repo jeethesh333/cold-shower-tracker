@@ -18,7 +18,14 @@ import {
   ModalCloseButton, 
   Input, 
   Flex, 
-  Tooltip, 
+  Tooltip,
+  useMediaQuery,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverArrow,
+  PopoverBody,
+  Portal,
   NumberInput, 
   NumberInputField, 
   NumberInputStepper, 
@@ -152,6 +159,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
     startDate: null,
     endDate: null,
   });
+  const [isMobileProgress] = useMediaQuery("(max-width: 768px)")
 
   // Get today's date in YYYY-MM-DD format
   const today = new Date();
@@ -643,6 +651,9 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
     >
       <EmotionGlobal
         styles={{
+          'input, textarea, select, button': {
+            fontSize: '16px',
+          },
           '.confetti-container': {
             position: 'fixed',
             pointerEvents: 'none',
@@ -650,7 +661,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
             height: '100%',
             top: 0,
             left: 0,
-            zIndex: 999999
+            zIndex: 2000
           },
           '@keyframes shine': {
             '0%': { transform: 'translateX(-100%)' },
@@ -726,7 +737,25 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
 
       {showConfetti && (
         <>
+          <Box
+            position="fixed"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            bg="blackAlpha.300"
+            backdropFilter="blur(8px)"
+            zIndex={1000}
+            pointerEvents="none"
+          />
           <ReactConfetti
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              zIndex: 2000,
+              pointerEvents: 'none'
+            }}
             width={windowSize.width}
             height={windowSize.height}
             recycle={true}
@@ -772,66 +801,43 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
             textAlign="center"
             zIndex={1000}
             pointerEvents="none"
-            backdropFilter="blur(8px)"
-            bg="whiteAlpha.100"
-            p={8}
+            w={{ base: "90%", md: "auto" }}
+            maxW="600px"
+            p={{ base: 4, md: 8 }}
             borderRadius="2xl"
-            boxShadow="0 8px 32px rgba(0, 0, 0, 0.2)"
             sx={{
               animation: "quoteReveal 5s ease-in-out",
               "@keyframes quoteReveal": {
-                "0%": { 
-                  opacity: 0, 
-                  transform: "translate(-50%, -60%) scale(0.9)",
-                  filter: "blur(10px)"
-                },
-                "15%": { 
-                  opacity: 1, 
-                  transform: "translate(-50%, -50%) scale(1)",
-                  filter: "blur(0px)"
-                },
-                "85%": { 
-                  opacity: 1, 
-                  transform: "translate(-50%, -50%) scale(1)",
-                  filter: "blur(0px)"
-                },
-                "100%": { 
-                  opacity: 0, 
-                  transform: "translate(-50%, -40%) scale(0.9)",
-                  filter: "blur(10px)"
-                }
+                "0%":   { opacity: 0, transform: "translate(-50%, -60%) scale(0.9)", filter: "blur(10px)" },
+                "15%":  { opacity: 1, transform: "translate(-50%, -50%) scale(1)",   filter: "blur(0px)"    },
+                "85%":  { opacity: 1, transform: "translate(-50%, -50%) scale(1)",   filter: "blur(0px)"    },
+                "100%": { opacity: 0, transform: "translate(-50%, -40%) scale(0.9)", filter: "blur(10px)"   },
               }
             }}
           >
             <Text
-              fontSize={{ base: "4xl", md: "6xl" }}
+              fontSize={{ base: "3xl", md: "6xl" }}
               fontWeight="bold"
-              bgGradient="linear(to-r, blue.100, white)"
-              bgClip="text"
-              textShadow="0 2px 10px rgba(255,255,255,0.3)"
+              color="white"
               mb={6}
               letterSpacing="wide"
-              sx={{
-                animation: "shimmer 2s ease-in-out infinite"
-              }}
             >
-              ✨ Great job! ✨
+              <Box as="span" color="yellow.300">✨</Box> Great job! <Box as="span" color="yellow.300">✨</Box>
             </Text>
+
             {currentQuote && (
-              <VStack spacing={4}>
-                <Text
-                  fontSize={{ base: "xl", md: "2xl" }}
-                  fontWeight="medium"
-                  color="whiteAlpha.900"
-                  textShadow="0 2px 8px rgba(0,0,0,0.3)"
-                  maxW="600px"
-                  px={4}
-                  fontStyle="italic"
-                  lineHeight="1.6"
-                >
-                  "{currentQuote.text}"
-                </Text>
-              </VStack>
+              <Text
+                fontSize={{ base: "lg", md: "2xl" }}
+                fontWeight="medium"
+                color="white"
+                textShadow="0 2px 8px rgba(0,0,0,0.5)"
+                mx="auto"
+                px={{ base: 2, md: 4 }}
+                fontStyle="italic"
+                lineHeight="1.4"
+              >
+                "{currentQuote.text}"
+              </Text>
             )}
           </Box>
         </>
@@ -1085,64 +1091,109 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
               <Box
                 width="100%"
                 height="16px"
-                bg="whiteAlpha.100"
-                borderRadius="full"
-                overflow="hidden"
+                overflow="visible"
                 position="relative"
                 boxShadow="inset 0 1px 2px rgba(0,0,0,0.1)"
               >
-                <Tooltip
-                  label={
-                    <Box p={2}>
-                      <Text fontWeight="bold" color={levelInfo.color} mb={1}>
-                        {levelInfo.label}
-                      </Text>
-                      <Text fontSize="sm" color="white">
-                        {levelInfo.description}
-                      </Text>
-                      <Text fontSize="xs" color="whiteAlpha.800" mt={1}>
-                        Progress: {Math.round(progress)}%
-                      </Text>
-                      {currentStreak > 0 && (
-                        <Text fontSize="xs" color="whiteAlpha.800">
-                          Current Streak: {currentStreak} days
+                {isMobileProgress ? (
+                  <Popover trigger="click" placement="top" isLazy>
+                    <PopoverTrigger>
+                      <Box
+                        width={`${progress}%`}
+                        height="100%"
+                        bgGradient={
+                          progress >= 100 ? "linear(to-r, blue.200, blue.400)" :
+                          progress >= 75 ? "linear(to-r, cyan.200, cyan.400)" :
+                          progress >= 50 ? "linear(to-r, green.200, green.400)" :
+                          progress >= 25 ? "linear(to-r, purple.200, purple.400)" :
+                          "linear(to-r, pink.200, pink.400)"
+                        }
+                        borderRadius="full"
+                        transition="all 1s cubic-bezier(0.4,0,0.2,1)"
+                        position="relative"
+                        _after={{
+                          content: '""',
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
+                          transform: "translateX(-100%)",
+                          animation: "shine 2s infinite"
+                        }}
+                      />
+                    </PopoverTrigger>
+                    <Portal>
+                      <PopoverContent bg="rgba(0,0,0,0.8)" borderRadius="md" px={3} py={2}>
+                        <PopoverArrow />
+                        <PopoverBody p={0}>
+                          <Box p={2}>
+                            <Text fontWeight="bold" color={levelInfo.color} mb={1}>{levelInfo.label}</Text>
+                            <Text fontSize="sm" color="white">{levelInfo.description}</Text>
+                            <Text fontSize="xs" color="whiteAlpha.800" mt={1}>Progress: {Math.round(progress)}%</Text>
+                            {currentStreak > 0 && (
+                              <Text fontSize="xs" color="whiteAlpha.800">Current Streak: {currentStreak} days</Text>
+                            )}
+                          </Box>
+                        </PopoverBody>
+                      </PopoverContent>
+                    </Portal>
+                  </Popover>
+                ) : (
+                  <Tooltip
+                    label={
+                      <Box p={2}>
+                        <Text fontWeight="bold" color={levelInfo.color} mb={1}>
+                          {levelInfo.label}
                         </Text>
-                      )}
-                    </Box>
-                  }
-                  placement="top"
-                  hasArrow
-                  bg="rgba(0, 0, 0, 0.8)"
-                  borderRadius="md"
-                  px={3}
-                  py={2}
-                >
-                  <Box
-                    width={`${progress}%`}
-                    height="100%"
-                    bgGradient={
-                      progress >= 100 ? "linear(to-r, blue.200, blue.400)" :
-                      progress >= 75 ? "linear(to-r, cyan.200, cyan.400)" :
-                      progress >= 50 ? "linear(to-r, green.200, green.400)" :
-                      progress >= 25 ? "linear(to-r, purple.200, purple.400)" :
-                      "linear(to-r, pink.200, pink.400)"
+                        <Text fontSize="sm" color="white">
+                          {levelInfo.description}
+                        </Text>
+                        <Text fontSize="xs" color="whiteAlpha.800" mt={1}>
+                          Progress: {Math.round(progress)}%
+                        </Text>
+                        {currentStreak > 0 && (
+                          <Text fontSize="xs" color="whiteAlpha.800">
+                            Current Streak: {currentStreak} days
+                          </Text>
+                        )}
+                      </Box>
                     }
-                    borderRadius="full"
-                    transition="all 1s cubic-bezier(0.4, 0, 0.2, 1)"
-                    position="relative"
-                    _after={{
-                      content: '""',
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
-                      transform: "translateX(-100%)",
-                      animation: "shine 2s infinite"
-                    }}
-                  />
-                </Tooltip>
+                    placement="top"
+                    hasArrow
+                    bg="rgba(0, 0, 0, 0.8)"
+                    borderRadius="md"
+                    px={3}
+                    py={2}
+                  >
+                    <Box
+                      width={`${progress}%`}
+                      height="100%"
+                      bgGradient={
+                        progress >= 100 ? "linear(to-r, blue.200, blue.400)" :
+                        progress >= 75 ? "linear(to-r, cyan.200, cyan.400)" :
+                        progress >= 50 ? "linear(to-r, green.200, green.400)" :
+                        progress >= 25 ? "linear(to-r, purple.200, purple.400)" :
+                        "linear(to-r, pink.200, pink.400)"
+                      }
+                      borderRadius="full"
+                      transition="all 1s cubic-bezier(0.4,0,0.2,1)"
+                      position="relative"
+                      _after={{
+                        content: '""',
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
+                        transform: "translateX(-100%)",
+                        animation: "shine 2s infinite"
+                      }}
+                    />
+                  </Tooltip>
+                )}
               </Box>
               <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(2, 1fr)" }} gap={3} mt={4}>
                 <Box>
@@ -1200,7 +1251,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                     setNote(e.target.value);
                   }}
                   placeholder="How was your cold shower experience today? Share your thoughts, feelings, and any breakthroughs..."
-                  minH="80px"
+                  minH={{ base: "80px", md: "80px" }}
                   maxH="240px"
                   bg="whiteAlpha.100"
                   color="white"
@@ -1216,9 +1267,10 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                   }}
                   _placeholder={{ 
                     color: "whiteAlpha.600",
-                    fontStyle: "italic"
+                    fontStyle: "italic",
+                    fontSize: { base: "xs", md: "sm" }
                   }}
-                  fontSize={{ base: "xs", md: "sm" }}
+                  fontSize={{ base: "md", md: "sm" }}
                   resize="vertical"
                   transition="all 0.2s"
                   sx={{
@@ -1321,14 +1373,14 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
           </VStack>
 
           {sortedNotes.length > 0 && (
-            <Box 
+            <Box
               display={{ base: "block", md: "block", lg: "block" }}
               position={{ base: "relative", lg: "sticky" }}
               top={4}
               height="fit-content"
               maxHeight={{ base: "400px", lg: "calc(100vh - 2rem)" }}
               overflowY="auto"
-              bg="whiteAlpha.100"
+              bg={{ base: "whiteAlpha.100", lg: "whiteAlpha.100" }}
               backdropFilter="blur(8px)"
               borderRadius="xl"
               boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
@@ -1349,16 +1401,26 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                 },
               }}
             >
-              <Box p={5} width="100%">
+              <Box
+                position="sticky"
+                top={0}
+                zIndex={2}
+                bg={{ base: "blue.600", lg: "whiteAlpha.100" }}
+                backdropFilter="blur(8px)"
+                borderTopRadius="xl"
+                borderBottom="1px solid"
+                borderColor="whiteAlpha.200"
+                p={{ base: 3, md: 5 }}
+              >
                 <VStack align="stretch" spacing={4}>
                   <Text fontWeight="semibold" fontSize="md" letterSpacing="wide">
                     ✍️ Session Notes
                   </Text>
-                  <Box 
-                    bg="whiteAlpha.200" 
-                    p={4} 
+                  <Box
+                    bg="whiteAlpha.200"
+                    p={{ base: 2, md: 4 }}
                     borderRadius="xl"
-                    borderWidth="1px"
+                    borderWidth="0.5px"
                     borderColor="whiteAlpha.300"
                     position="relative"
                     overflow="hidden"
@@ -1384,45 +1446,51 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                       transition: "opacity 0.3s"
                     }}
                   >
-                    <HStack spacing={4} align="center">
+                    <HStack spacing={{ base: 2, md: 4 }} align="center" flexWrap="nowrap">
                       <Box flex="1">
-                        <Text fontSize="xs" color="whiteAlpha.700" mb={1} fontWeight="medium">Start Date</Text>
+                        <Text fontSize="xs" color="whiteAlpha.700" mb={1} fontWeight="medium">
+                          Start Date
+                        </Text>
                         <Input
                           type="date"
-                          size="sm"
                           width="100%"
-                          value={dateFilter.startDate || ''}
-                          onChange={(e) => setDateFilter(prev => ({ ...prev, startDate: e.target.value }))}
+                          minW={{ base: "120px", md: "initial" }}
+                          px={{ base: 2, md: 4 }}
+                          whiteSpace="nowrap"
                           bg="whiteAlpha.100"
                           color="white"
-                          borderColor="whiteAlpha.300"
-                          _hover={{ borderColor: "whiteAlpha.400" }}
-                          _focus={{ 
-                            borderColor: "blue.400",
-                            boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)"
-                          }}
-                          max={dateFilter.endDate || undefined}
                           borderRadius="lg"
+                          borderWidth="0.5px"
+                          borderColor="whiteAlpha.300"
+                          fontSize={{ base: "md", md: "sm" }}
+                          _hover={{ borderColor: "whiteAlpha.400" }}
+                          _focus={{
+                            borderColor: "blue.400",
+                            boxShadow: "0 0 0 1px rgba(66,153,225,0.6)"
+                          }}
                         />
                       </Box>
                       <Box flex="1">
-                        <Text fontSize="xs" color="whiteAlpha.700" mb={1} fontWeight="medium">End Date</Text>
+                        <Text fontSize="xs" color="whiteAlpha.700" mb={1} fontWeight="medium">
+                          End Date
+                        </Text>
                         <Input
                           type="date"
-                          size="sm"
                           width="100%"
-                          value={dateFilter.endDate || ''}
-                          onChange={(e) => setDateFilter(prev => ({ ...prev, endDate: e.target.value }))}
+                          minW={{ base: "120px", md: "initial" }}
+                          px={{ base: 2, md: 4 }}
+                          whiteSpace="nowrap"
                           bg="whiteAlpha.100"
                           color="white"
-                          borderColor="whiteAlpha.300"
-                          _hover={{ borderColor: "whiteAlpha.400" }}
-                          _focus={{ 
-                            borderColor: "blue.400",
-                            boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)"
-                          }}
-                          min={dateFilter.startDate || undefined}
                           borderRadius="lg"
+                          borderWidth="0.5px"
+                          borderColor="whiteAlpha.300"
+                          fontSize={{ base: "md", md: "sm" }}
+                          _hover={{ borderColor: "whiteAlpha.400" }}
+                          _focus={{
+                            borderColor: "blue.400",
+                            boxShadow: "0 0 0 1px rgba(66,153,225,0.6)"
+                          }}
                         />
                       </Box>
                       <IconButton
@@ -1432,10 +1500,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                         onClick={() => setDateFilter({ startDate: null, endDate: null })}
                         variant="ghost"
                         color="white"
-                        _hover={{ 
-                          bg: "whiteAlpha.200",
-                          transform: "scale(1.05)"
-                        }}
+                        _hover={{ bg: "whiteAlpha.200", transform: "scale(1.05)" }}
                         isDisabled={!dateFilter.startDate && !dateFilter.endDate}
                         alignSelf="flex-end"
                         mb={1}
@@ -1444,7 +1509,9 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                     </HStack>
                   </Box>
                 </VStack>
-                <VStack align="stretch" spacing={3} width="100%" mt={4}>
+              </Box>
+              <Box p={5}>
+                <VStack align="stretch" spacing={3} width="100%">
                   {filteredNotes.map((noteData, index) => (
                     <Box 
                       key={index} 
@@ -1542,7 +1609,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
               height="fit-content"
               maxHeight={{ base: "400px", lg: "calc(100vh - 2rem)" }}
               overflowY="auto"
-              bg="whiteAlpha.100"
+              bg={{ base: "whiteAlpha.100", lg: "whiteAlpha.100" }}
               backdropFilter="blur(8px)"
               borderRadius="xl"
               boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
@@ -1598,7 +1665,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                 boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.5)"
               }}
               _placeholder={{ color: "whiteAlpha.600" }}
-              fontSize={{ base: "xs", md: "sm" }}
+              fontSize={{ base: "md", md: "sm" }}
               resize="vertical"
             />
           </ModalBody>
@@ -1771,6 +1838,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                     borderColor: "whiteAlpha.500",
                     boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.5)"
                   }}
+                  fontSize={{ base: "md", md: "sm" }}
                 />
               </Box>
               <Box>
@@ -1792,7 +1860,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                     boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.5)"
                   }}
                   _placeholder={{ color: "whiteAlpha.600" }}
-                  fontSize={{ base: "xs", md: "sm" }}
+                  fontSize={{ base: "md", md: "sm" }}
                   resize="vertical"
                 />
               </Box>
