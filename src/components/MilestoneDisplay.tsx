@@ -105,35 +105,39 @@ const MilestoneDisplay: React.FC<MilestoneDisplayProps> = ({ currentProgress }) 
               _hover={{ transform: 'translateY(-2px)' }}
               animation={isNext ? `${pulseAnimation} 2s infinite` : undefined}
             >
-              <Text fontSize="2xl" mb={direction === 'row' ? 2 : 0} mr={direction === 'column' ? 3 : 0}>
-                {milestone.icon}
-              </Text>
-              <VStack spacing={1} align={direction === 'column' ? "start" : "center"}>
-                <Text
-                  fontSize="sm"
-                  fontWeight="semibold"
-                  color={isAchieved ? 'white' : 'whiteAlpha.900'}
-                >
-                  {milestone.name}
-                </Text>
-                <Text
-                  fontSize="xs"
-                  color={isAchieved ? 'white' : 'whiteAlpha.800'}
-                  fontWeight="medium"
-                >
-                  {milestone.requiredProgress}%
-                </Text>
-                {isNext && (
-                  <Badge
-                    colorScheme="blue"
-                    variant="solid"
-                    fontSize="xs"
-                    mt={1}
+              <HStack spacing={2} align="center" width="100%">
+                <Box width="32px" display="flex" justifyContent="center" alignItems="center">
+                  <Text fontSize="2xl">
+                    {milestone.icon}
+                  </Text>
+                </Box>
+                <VStack spacing={0} align="start" flex={1}>
+                  <Text
+                    fontSize="sm"
+                    fontWeight="semibold"
+                    color={isAchieved ? 'white' : 'whiteAlpha.900'}
                   >
-                    Next milestone
-                  </Badge>
-                )}
-              </VStack>
+                    {milestone.name}
+                  </Text>
+                  <Text
+                    fontSize="xs"
+                    color={isAchieved ? 'white' : 'whiteAlpha.800'}
+                    fontWeight="medium"
+                  >
+                    {milestone.requiredProgress}%
+                  </Text>
+                  {isNext && (
+                    <Badge
+                      colorScheme="blue"
+                      variant="solid"
+                      fontSize="xs"
+                      mt={1}
+                    >
+                      Next milestone
+                    </Badge>
+                  )}
+                </VStack>
+              </HStack>
             </Flex>
           );
         })}

@@ -261,9 +261,11 @@ Current message: ${userMessage}`;
         <ModalContent 
           bg="blue.900" 
           borderRadius={{ base: 0, md: "xl" }}
-          margin={0}
-          height={{ base: "100vh", md: "auto" }}
+          margin={{ base: 0, md: "auto" }}
+          height={{ base: "100vh", md: "600px" }}
           maxHeight={{ base: "100vh", md: "600px" }}
+          display="flex"
+          flexDirection="column"
         >
           <ModalHeader 
             bgGradient="linear(to-r, blue.400, blue.600)" 
@@ -274,6 +276,7 @@ Current message: ${userMessage}`;
             alignItems="center"
             p={3}
             minHeight="60px"
+            flexShrink={0}
           >
             <Flex align="center" width={{ base: "auto", md: "full" }} minWidth={0} mr={4}>
               <Box as={FaRobot} size={16} flexShrink={0} mr={2} />
@@ -320,16 +323,18 @@ Current message: ${userMessage}`;
           
           <ModalBody 
             p={0} 
-            height={{ base: "calc(100vh - 140px)", md: "400px" }}
-            display="flex" 
+            flex={1}
+            overflow="hidden"
+            display="flex"
             flexDirection="column"
           >
             <VStack 
-              flex="1" 
+              flex={1} 
               overflowY="auto" 
               p={4} 
               spacing={4} 
               align="stretch"
+              mb={{ base: "60px", md: 0 }}
               sx={{
                 '&::-webkit-scrollbar': {
                   width: '4px',
@@ -404,10 +409,11 @@ Current message: ${userMessage}`;
                             →
                           </Box>
                         }
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
                           setInput(question);
-                          sendMessage();
                         }}
+                        type="button"
                         transition="all 0.2s"
                       >
                         {question}
@@ -462,12 +468,16 @@ Current message: ${userMessage}`;
             borderTop="1px solid" 
             borderColor="whiteAlpha.200"
             position={{ base: "fixed", md: "relative" }}
-            bottom={{ base: 0, md: "auto" }}
+            bottom={0}
+            left={0}
+            right={0}
             width="100%"
             bg="blue.900"
+            flexShrink={0}
+            zIndex={2}
           >
             <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-              <HStack width="100%" spacing={2} alignItems="flex-end">
+              <HStack width="100%" spacing={2}>
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -485,7 +495,6 @@ Current message: ${userMessage}`;
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="off"
-                  size={{ base: "md", md: "md" }}
                   minH="40px"
                   maxH="120px"
                   resize="none"
@@ -518,8 +527,8 @@ Current message: ${userMessage}`;
                   isDisabled={!input.trim() || isLoading}
                   isLoading={isLoading}
                   type="submit"
-                  size={{ base: "md", md: "md" }}
                   height="40px"
+                  flexShrink={0}
                 />
               </HStack>
             </form>
