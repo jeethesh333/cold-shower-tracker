@@ -38,8 +38,7 @@ import {
   HStack,
 } from '@chakra-ui/react'
 import { Global as EmotionGlobal } from '@emotion/react'
-import { useState, useEffect, useRef } from 'react'
-import ReactConfetti from 'react-confetti'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { differenceInDays, format, isAfter, isBefore, parseISO } from 'date-fns'
 import { DeleteIcon, EditIcon, CalendarIcon, SettingsIcon, CloseIcon } from '@chakra-ui/icons'
 import ChallengeGrid from './ChallengeGrid'
@@ -49,6 +48,9 @@ import { FaSnowflake } from 'react-icons/fa'
 import ChatAssistant from './ChatAssistant'
 import MilestoneDisplay from './MilestoneDisplay'
 import { ChallengeData } from '../types'
+
+// Lazy load react-confetti for better performance
+const ReactConfetti = lazy(() => import('react-confetti'))
 
 interface ChallengeTrackerProps {
   challengeData: ChallengeData
@@ -319,52 +321,19 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
     }
 
     setIsAnimating(true);
-    const newStreak = currentStreak + 1;
     
-    // Special streak-based celebrations
+    // Only show celebration for 100% completion
     const celebrations = [];
     
-    // Check all possible celebrations and collect them
+    // Check if challenge is completed
     if (progress === 100) {
       celebrations.push({
         title: "🎉 LEGENDARY ACHIEVEMENT! 🎉",
         message: "You've completed the entire challenge! You're truly a master of cold showers!"
       });
-    }
-    if (newStreak === 30) {
-      celebrations.push({
-        title: "❄️ FROST LEGEND! ❄️",
-        message: "A whole month of cold showers! Your dedication is truly legendary!"
-      });
-    }
-    if (newStreak === 14) {
-      celebrations.push({
-        title: "🧊 ICE MASTER! 🧊",
-        message: "Two weeks of mastery! Your resilience is remarkable!"
-      });
-    }
-    if (newStreak === 7) {
-      celebrations.push({
-        title: "⚔️ COLD WARRIOR! ⚔️",
-        message: "A full week of cold showers! Your warrior spirit is shining!"
-      });
-    }
-    if (newStreak === 3) {
-      celebrations.push({
-        title: "🌨️ FROST WALKER! 🌨️",
-        message: "Three days in a row! You're building incredible momentum!"
-      });
-    }
-    if (newStreak === 1) {
-      celebrations.push({
-        title: "💫 ICE BREAKER! 💫",
-        message: "First day conquered! Every journey begins with a single step!"
-      });
-    }
-    
-    // Show all celebrations with slight delays between them
-    celebrations.forEach((celebration, index) => {
-      setTimeout(() => {
+      
+      // Show celebration popup only for 100% completion
+      celebrations.forEach((celebration) => {
         toast({
           title: celebration.title,
           description: celebration.message,
@@ -373,8 +342,8 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
           isClosable: true,
           position: "top",
         });
-      }, index * 300); // 300ms delay between each toast
-    });
+      });
+    }
 
     const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
     setCurrentQuote(randomQuote);
@@ -669,106 +638,58 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
   const levelInfo = getLevelInfo(progress)
 
   return (
-    <Box
-      width="100vw"
-      minHeight="100vh"
-      bgGradient="linear(135deg, blue.900 0%, blue.700 50%, blue.600 100%)"
-      py={4}
-      display="flex"
-      justifyContent="center"
-      alignItems="flex-start"
-      color="white"
-      overflowX="hidden"
-      overflowY="auto"
-      position="absolute"
-      top="0"
-      left="0"
-      margin="0"
-      padding="0"
-      sx={{
-        '&::before': {
-          content: '""',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.05)',
-          pointerEvents: 'none',
-          zIndex: 0
-        }
-      }}
-    >
-      <EmotionGlobal
-        styles={{
-          'input, textarea, select, button': {
-            fontSize: '16px',
-          },
-          '.confetti-container': {
-            position: 'fixed',
-            pointerEvents: 'none',
-            width: '100%',
-            height: '100%',
-            top: 0,
-            left: 0,
-            zIndex: 999999
-          },
-          '@keyframes shine': {
-            '0%': { transform: 'translateX(-100%)' },
-            '100%': { transform: 'translateX(100%)' }
-          },
-          '@keyframes glow': {
-            '0%': { boxShadow: '0 0 5px rgba(0, 0, 0, 0.2)' },
-            '100%': { boxShadow: '0 0 20px rgba(0, 0, 0, 0.5)' }
-          }
-        }}
-      />
-
-      <Box
-        position="fixed"
-        top={4}
-        right={4}
-        zIndex={1000}
-      >
-        <Menu>
-          <Tooltip label="Preferences" placement="left">
-            <MenuButton
-              as={IconButton}
-              icon={<SettingsIcon />}
-              variant="ghost"
+    <Box position="relative">
+      {showConfetti && (
+        <Suspense fallback={null}>
+          <ReactConfetti
+            width={windowSize.width}
+            height={windowSize.height}
+            recycle={false}
+            numberOfPieces={500}
+            gravity={0.15}
+          />
+        </Suspense>
+      )}
+      
+      {showConfetti && currentQuote && (
+        <Box
+          position="fixed"
+          top="0"
+          left="0"
+          right="0"
+          bottom="0"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          zIndex={1000}
+          backdropFilter="blur(4px)"
+          bg="rgba(0,0,0,0.2)"
+          pointerEvents="none"
+        >
+          <VStack spacing={6} p={6} maxW="90vw" textAlign="center">
+            <Text
+              fontSize={{ base: "4xl", md: "6xl", lg: "7xl" }}
+              fontWeight="bold"
               color="white"
-              _hover={{
-                bg: "whiteAlpha.200"
-              }}
-              backdropFilter="blur(8px)"
-            />
-          </Tooltip>
-          <MenuList bg="blue.800" borderColor="whiteAlpha.200">
-            <MenuItem 
-              bg="transparent" 
-              _hover={{ bg: "whiteAlpha.200" }}
-              onClick={() => setShowSnowfall((prev: boolean) => !prev)}
+              textShadow="0 2px 10px rgba(0,0,0,0.5)"
+              lineHeight="1.2"
+              letterSpacing="wide"
             >
-              <Flex align="center" justify="space-between" width="100%">
-                <Flex align="center" gap={2}>
-                  <FaSnowflake />
-                  <Text>Snowfall Effect</Text>
-                </Flex>
-                <Switch 
-                  isChecked={showSnowfall}
-                  colorScheme="blue"
-                  size="md"
-                />
-              </Flex>
-            </MenuItem>
-          </MenuList>
-        </Menu>
-      </Box>
-
-      <SnowfallEffect 
-        isEnabled={showSnowfall} 
-        onToggle={() => setShowSnowfall((prev: boolean) => !prev)} 
-      />
+              ✨ Great job! ✨
+            </Text>
+            <Text
+              fontSize={{ base: "lg", md: "2xl" }}
+              fontWeight="medium"
+              color="white"
+              textShadow="0 1px 4px rgba(0,0,0,0.3)"
+              fontStyle="italic"
+              lineHeight="1.4"
+            >
+              "{currentQuote.text}"
+            </Text>
+          </VStack>
+        </Box>
+      )}
 
       {isAnimating && (
         <Box
@@ -785,944 +706,983 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
         />
       )}
 
-      {showConfetti && (
-        <>
-          <Box
-            position="fixed"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            bg="blackAlpha.300"
-            backdropFilter="blur(8px)"
-            zIndex={1000}
-            pointerEvents="none"
-          />
-          <ReactConfetti
-            width={windowSize.width}
-            height={windowSize.height}
-            recycle={true}
-            numberOfPieces={200}
-            gravity={0.2}
-            wind={0.01}
-            opacity={0.8}
-            colors={['#FFD700', '#87CEEB', '#98FB98', '#DDA0DD', '#F0E68C']}
-            drawShape={ctx => {
-              // Create custom rotating shapes
-              const rotation = (Date.now() / 500) % (Math.PI * 2);
-              ctx.beginPath();
-              if (Math.random() > 0.5) {
-                // Star shape
-                for (let i = 0; i < 5; i++) {
-                  const angle = (i * Math.PI * 2) / 5 - Math.PI / 2 + rotation;
-                  const radius = i % 2 === 0 ? 4 : 8;
-                  const x = Math.cos(angle) * radius;
-                  const y = Math.sin(angle) * radius;
-                  if (i === 0) ctx.moveTo(x, y);
-                  else ctx.lineTo(x, y);
-                }
-              } else {
-                // Rotating rectangle
-                ctx.save();
-                ctx.rotate(rotation);
-                ctx.rect(-3, -3, 6, 6);
-                ctx.restore();
-              }
-              ctx.closePath();
-              ctx.fill();
-            }}
-            tweenFunction={(_, currentValue, targetValue) => {
-              // Add smooth easing to particle movement
-              return currentValue + (targetValue - currentValue) * 0.1;
-            }}
-          />
-          <Box
-            position="fixed"
-            top="50%"
-            left="50%"
-            transform="translate(-50%, -50%)"
-            textAlign="center"
-            zIndex={1000}
-            pointerEvents="none"
-            px={{ base: 4, md: 8 }}
-            py={{ base: 6, md: 8 }}
-            maxW={{ base: "90vw", md: "600px" }}
-            borderRadius="2xl"
-            sx={{
-              animation: "quoteReveal 5s ease-in-out",
-              "@keyframes quoteReveal": {
-                "0%": { 
-                  opacity: 0, 
-                  transform: "translate(-50%, -60%) scale(0.9)",
-                  filter: "blur(10px)"
-                },
-                "15%": { 
-                  opacity: 1, 
-                  transform: "translate(-50%, -50%) scale(1)",
-                  filter: "blur(0px)"
-                },
-                "85%": { 
-                  opacity: 1, 
-                  transform: "translate(-50%, -50%) scale(1)",
-                  filter: "blur(0px)"
-                },
-                "100%": { 
-                  opacity: 0, 
-                  transform: "translate(-50%, -40%) scale(0.9)",
-                  filter: "blur(10px)"
-                }
-              }
-            }}
-          >
-            <Text
-              fontSize={{ base: "3xl", md: "6xl" }}
-              fontWeight="bold"
-              color="white"
-              mb={6}
-              letterSpacing="wide"
-              whiteSpace="nowrap"
-            >
-              <Box as="span" color="yellow.300">✨</Box> Great job! <Box as="span" color="yellow.300">✨</Box>
-            </Text>
-
-            {currentQuote && (
-              <VStack spacing={4}>
-                <Text
-                  fontSize={{ base: "lg", md: "2xl" }}
-                  fontWeight="medium"
-                  color="white"
-                  textShadow="0 2px 8px rgba(0,0,0,0.5)"
-                  maxW="90vw"
-                  px={{ base: 2, md: 4 }}
-                  fontStyle="italic"
-                  lineHeight="1.6"
-                >
-                  "{currentQuote.text}"
-                </Text>
-              </VStack>
-            )}
-          </Box>
-        </>
-      )}
-
       <Box
-        width="100%"
-        maxW={{ base: "95%", lg: "1200px" }}
-        mx="auto"
-        p={{ base: 4, md: 8 }}
-        position="relative"
-        zIndex={1}
-        opacity={isAnimating ? 0.7 : 1}
-        pointerEvents={isAnimating ? "none" : "auto"}
-        transition="opacity 0.3s"
+        width="100vw"
+        minHeight="100vh"
+        bgGradient="linear(135deg, blue.900 0%, blue.700 50%, blue.600 100%)"
+        py={4}
+        display="flex"
+        justifyContent="center"
+        alignItems="flex-start"
+        color="white"
+        overflowX="hidden"
+        overflowY="auto"
+        position="absolute"
+        top="0"
+        left="0"
+        margin="0"
+        padding="0"
+        sx={{
+          '&::before': {
+            content: '""',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.05)',
+            pointerEvents: 'none',
+            zIndex: 0
+          }
+        }}
       >
-        <VStack gap={{ base: 4, md: 6 }} width="100%" mb={6}>
-          <Box textAlign="center" width="100%">
-            <Heading 
-              size={{ base: "md", md: "lg" }}
-              bgGradient="linear(to-r, blue.50, white)"
-              bgClip="text"
-              mb={{ base: 2, md: 3 }}
-              letterSpacing="tight"
-              fontWeight="extrabold"
-              filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))"
-            >
-              ❄️ Cold Shower Challenge
-            </Heading>
-            <Text 
-              fontSize={{ base: "sm", md: "md" }}
-              fontWeight="medium"
-              color="whiteAlpha.900"
-              letterSpacing="wide"
-              textShadow="0 1px 2px rgba(0,0,0,0.1)"
-            >
-              Let's do this{challengeData.userName && challengeData.userName !== 'User' ? `, ${challengeData.userName}` : ''}! 💪
-            </Text>
-          </Box>
-        </VStack>
+        <EmotionGlobal
+          styles={{
+            'input, textarea, select, button': {
+              fontSize: '16px',
+            },
+            '.confetti-container': {
+              position: 'fixed',
+              pointerEvents: 'none',
+              width: '100%',
+              height: '100%',
+              top: 0,
+              left: 0,
+              zIndex: 999999
+            },
+            '@keyframes shine': {
+              '0%': { transform: 'translateX(-100%)' },
+              '100%': { transform: 'translateX(100%)' }
+            },
+            '@keyframes glow': {
+              '0%': { boxShadow: '0 0 5px rgba(0, 0, 0, 0.2)' },
+              '100%': { boxShadow: '0 0 20px rgba(0, 0, 0, 0.5)' }
+            }
+          }}
+        />
 
-        <Grid
-          templateColumns={{ base: "1fr", lg: "1fr 450px" }}
-          gap={{ base: 4, lg: 6 }}
+        <Box
+          position="fixed"
+          top={4}
+          right={4}
+          zIndex={1000}
         >
-          <VStack gap={{ base: 4, md: 6 }}>
-            <Grid 
-              templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
-              gap={{ base: 3, md: 4 }}
-              width="100%"
-            >
-              <Box 
-                p={{ base: 4, md: 5 }}
-                borderRadius="xl"
-                bg="whiteAlpha.100"
-                backdropFilter="blur(8px)"
-                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-                textAlign="center"
-                transform="translateY(0)"
-                transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                position="relative"
-                overflow="hidden"
-                _before={{
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  bgGradient: currentStreak >= 10 ? "linear(to-r, blue.200, blue.500, purple.500)" : "linear(to-br, whiteAlpha.50, transparent)",
-                  opacity: currentStreak >= 10 ? 0.8 : 0,
-                  transition: "opacity 0.3s",
-                  animation: currentStreak >= 10 ? "glow 1.5s infinite alternate" : "none",
-                  borderRadius: "xl",
-                  zIndex: -1
-                }}
+          <Menu>
+            <Tooltip label="Preferences" placement="left">
+              <MenuButton
+                as={IconButton}
+                icon={<SettingsIcon />}
+                variant="ghost"
+                color="white"
                 _hover={{
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)",
-                  _before: {
-                    opacity: 1
-                  }
+                  bg: "whiteAlpha.200"
                 }}
-              >
-                <Box position="relative" zIndex={1}>
-                  <Text 
-                    fontSize={{ base: "2xl", md: "3xl" }} 
-                    fontWeight="bold" 
-                    bgGradient={currentStreak > 0 ? "linear(to-r, blue.100, blue.300)" : "linear(to-r, whiteAlpha.900, whiteAlpha.600)"}
-                    bgClip="text"
-                    mb={1} 
-                    textShadow="0 1px 2px rgba(0,0,0,0.1)"
-                  >
-                    {currentStreak}
-                  </Text>
-                  <Text color="whiteAlpha.900" fontWeight="medium" letterSpacing="wide">Day Streak</Text>
-                </Box>
-              </Box>
-              <Box 
-                p={{ base: 4, md: 5 }}
-                borderRadius="xl"
-                bg="whiteAlpha.100"
                 backdropFilter="blur(8px)"
-                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-                textAlign="center"
-                transform="translateY(0)"
-                transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                position="relative"
-                overflow="hidden"
-                _before={{
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  bgGradient: "linear(to-br, whiteAlpha.50, transparent)",
-                  opacity: 0,
-                  transition: "opacity 0.3s"
-                }}
-                _hover={{
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)",
-                  _before: {
-                    opacity: 1
-                  }
-                }}
+              />
+            </Tooltip>
+            <MenuList bg="blue.800" borderColor="whiteAlpha.200">
+              <MenuItem 
+                bg="transparent" 
+                _hover={{ bg: "whiteAlpha.200" }}
+                onClick={() => setShowSnowfall((prev: boolean) => !prev)}
               >
-                <Box position="relative" zIndex={1}>
-                  <Text 
-                    fontSize={{ base: "2xl", md: "3xl" }} 
-                    fontWeight="bold" 
-                    bgGradient="linear(to-r, blue.100, blue.300)"
-                    bgClip="text"
-                    mb={1} 
-                    textShadow="0 1px 2px rgba(0,0,0,0.1)"
-                  >
-                    {completedDays}
-                  </Text>
-                  <Text color="whiteAlpha.900" fontWeight="medium" letterSpacing="wide">Days Completed</Text>
-                </Box>
-              </Box>
-              <Box 
-                p={{ base: 4, md: 5 }}
-                borderRadius="xl"
-                bg="whiteAlpha.100"
-                backdropFilter="blur(8px)"
-                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-                textAlign="center"
-                transform="translateY(0)"
-                transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                position="relative"
-                overflow="hidden"
-                _before={{
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  bgGradient: "linear(to-br, whiteAlpha.50, transparent)",
-                  opacity: 0,
-                  transition: "opacity 0.3s"
-                }}
-                _hover={{
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)",
-                  _before: {
-                    opacity: 1
-                  }
-                }}
-              >
-                <Box position="relative" zIndex={1}>
-                  <Text 
-                    fontSize={{ base: "2xl", md: "3xl" }} 
-                    fontWeight="bold" 
-                    bgGradient={daysLeft > 0 ? "linear(to-r, blue.100, blue.300)" : "linear(to-r, green.200, green.400)"}
-                    bgClip="text"
-                    mb={1} 
-                    textShadow="0 1px 2px rgba(0,0,0,0.1)"
-                  >
-                    {daysLeft}
-                  </Text>
-                  <Text color="whiteAlpha.900" fontWeight="medium" letterSpacing="wide">Days Left</Text>
-                </Box>
-              </Box>
-            </Grid>
-
-            <Box 
-              width="100%" 
-              bg="whiteAlpha.100"
-              backdropFilter="blur(8px)"
-              p={{ base: 4, md: 5 }}
-              borderRadius="xl"
-              boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-              position="relative"
-              overflow="hidden"
-              _before={{
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                bgGradient: "linear(to-br, whiteAlpha.50, transparent)",
-                opacity: 0,
-                transition: "opacity 0.3s"
-              }}
-              _hover={{
-                _before: {
-                  opacity: 1
-                }
-              }}
-            >
-              <Flex justify="space-between" align="center" mb={3}>
-                <Text fontWeight="semibold" color="white" fontSize={{ base: "sm", md: "md" }} letterSpacing="wide">
-                  Progress
-                </Text>
-                <Flex align="center" gap={3}>
-                  <Tooltip label="Change challenge duration" placement="top">
-                    <IconButton
-                      aria-label="Change duration"
-                      icon={<CalendarIcon />}
-                      size="sm"
-                      variant="ghost"
-                      color="white"
-                      onClick={() => setShowDurationModal(true)}
-                      _hover={{
-                        bg: "whiteAlpha.200",
-                        transform: "scale(1.05)"
-                      }}
-                      transition="all 0.2s"
-                    />
-                  </Tooltip>
-                  <Text 
-                    fontWeight="bold" 
-                    fontSize={{ base: "lg", md: "xl" }}
-                    bgGradient={
-                      progress >= 100 ? "linear(to-r, blue.200, blue.400)" :
-                      progress >= 75 ? "linear(to-r, cyan.200, cyan.400)" :
-                      progress >= 50 ? "linear(to-r, green.200, green.400)" :
-                      progress >= 25 ? "linear(to-r, purple.200, purple.400)" :
-                      "linear(to-r, pink.200, pink.400)"
-                    }
-                    bgClip="text"
-                  >
-                    {Math.round(progress)}%
-                  </Text>
-                </Flex>
-              </Flex>
-              <Box
-                width="100%"
-                height="16px"
-                bg="whiteAlpha.100"
-                borderRadius="full"
-                overflow="hidden"
-                position="relative"
-                boxShadow="inset 0 1px 2px rgba(0,0,0,0.1)"
-              >
-                <Tooltip
-                  label={
-                    <Box p={2}>
-                      <Text fontWeight="bold" color={levelInfo.color} mb={1}>
-                        {levelInfo.label}
-                      </Text>
-                      <Text fontSize="sm" color="white">
-                        {levelInfo.description}
-                      </Text>
-                      <Text fontSize="xs" color="whiteAlpha.800" mt={1}>
-                        Progress: {Math.round(progress)}%
-                      </Text>
-                      {currentStreak > 0 && (
-                        <Text fontSize="xs" color="whiteAlpha.800">
-                          Current Streak: {currentStreak} days
-                        </Text>
-                      )}
-                    </Box>
-                  }
-                  placement="top"
-                  hasArrow
-                  bg="rgba(0, 0, 0, 0.8)"
-                  borderRadius="md"
-                  px={3}
-                  py={2}
-                >
-                  <Box
-                    width={`${progress}%`}
-                    height="100%"
-                    bgGradient={
-                      progress >= 100 ? "linear(to-r, blue.200, blue.400)" :
-                      progress >= 75 ? "linear(to-r, cyan.200, cyan.400)" :
-                      progress >= 50 ? "linear(to-r, green.200, green.400)" :
-                      progress >= 25 ? "linear(to-r, purple.200, purple.400)" :
-                      "linear(to-r, pink.200, pink.400)"
-                    }
-                    borderRadius="full"
-                    transition="all 1s cubic-bezier(0.4, 0, 0.2, 1)"
-                    position="relative"
-                    _after={{
-                      content: '""',
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
-                      transform: "translateX(-100%)",
-                      animation: "shine 2s infinite"
-                    }}
+                <Flex align="center" justify="space-between" width="100%">
+                  <Flex align="center" gap={2}>
+                    <FaSnowflake />
+                    <Text>Snowfall Effect</Text>
+                  </Flex>
+                  <Switch 
+                    isChecked={showSnowfall}
+                    colorScheme="blue"
+                    size="md"
                   />
-                </Tooltip>
-              </Box>
-              <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(2, 1fr)" }} gap={3} mt={4}>
-                <Box>
-                  <Text fontWeight="medium" color="whiteAlpha.700" fontSize="xs" mb={1} letterSpacing="wide">Start Date</Text>
-                  <Text fontWeight="semibold" color="white" fontSize={{ base: "xs", md: "sm" }}>
-                    {format(new Date(challengeData.startDate + 'T00:00:00'), 'MM/dd/yy')}
-                  </Text>
-                </Box>
-                <Box textAlign="right">
-                  <Text fontWeight="medium" color="whiteAlpha.700" fontSize="xs" mb={1} letterSpacing="wide">End Date</Text>
-                  <Text fontWeight="semibold" color="white" fontSize={{ base: "xs", md: "sm" }}>
-                    {format(
-                      new Date(new Date(challengeData.startDate + 'T00:00:00').setDate(
-                        new Date(challengeData.startDate + 'T00:00:00').getDate() + challengeData.days - 1
-                      )),
-                      'MM/dd/yy'
-                    )}
-                  </Text>
-                </Box>
-              </Grid>
-            </Box>
+                </Flex>
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        </Box>
 
-            <MilestoneDisplay currentProgress={progress} />
+        <SnowfallEffect 
+          isEnabled={showSnowfall} 
+          onToggle={() => setShowSnowfall((prev: boolean) => !prev)} 
+        />
 
-            <ChallengeGrid 
-              challengeData={challengeData}
-              onEditNote={handleEditNote}
-              onDeleteDate={handleDeleteNote}
-            />
-
-            <Box 
-              width="100%" 
-              bg="whiteAlpha.100"
-              backdropFilter="blur(8px)"
-              p={{ base: 4, md: 5 }}
-              borderRadius="xl"
-              boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-              position="relative"
-              transition="all 0.3s"
-              _hover={{
-                boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)",
-                transform: "translateY(-1px)"
-              }}
-            >
-              <Flex justify="space-between" align="center" mb={3}>
-                <Text fontWeight="semibold" color="white" fontSize={{ base: "sm", md: "md" }} letterSpacing="wide">
-                  Today's Note
-                </Text>
-              </Flex>
-              <Box
-                position="relative"
-                transition="all 0.3s"
+        <Box
+          width="100%"
+          maxW={{ base: "95%", lg: "1200px" }}
+          mx="auto"
+          p={{ base: 4, md: 8 }}
+          position="relative"
+          zIndex={1}
+          opacity={isAnimating ? 0.7 : 1}
+          pointerEvents={isAnimating ? "none" : "auto"}
+          transition="opacity 0.3s"
+        >
+          <VStack gap={{ base: 4, md: 6 }} width="100%" mb={6}>
+            <Box textAlign="center" width="100%">
+              <Heading 
+                size={{ base: "md", md: "lg" }}
+                bgGradient="linear(to-r, blue.50, white)"
+                bgClip="text"
+                mb={{ base: 2, md: 3 }}
+                letterSpacing="tight"
+                fontWeight="extrabold"
+                filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))"
               >
-                <Textarea
-                  value={note}
-                  onChange={(e) => {
-                    setNote(e.target.value);
-                  }}
-                  placeholder="How was your cold shower experience today? Share your thoughts, feelings, and any breakthroughs..."
-                  minH={{ base: "80px", md: "80px" }}
-                  maxH="240px"
-                  bg="whiteAlpha.100"
-                  color="white"
-                  borderColor="whiteAlpha.300"
-                  borderRadius="xl"
-                  _hover={{ 
-                    borderColor: "whiteAlpha.400",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
-                  }}
-                  _focus={{ 
-                    borderColor: "blue.400",
-                    boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6), 0 2px 6px rgba(0,0,0,0.1)"
-                  }}
-                  _placeholder={{ 
-                    color: "whiteAlpha.600",
-                    fontStyle: "italic",
-                    fontSize: { base: "xs", md: "sm" }
-                  }}
-                  fontSize={{ base: "md", md: "sm" }}
-                  resize="vertical"
-                  transition="all 0.2s"
-                  sx={{
-                    '&::-webkit-scrollbar': {
-                      width: '6px',
-                      borderRadius: '6px',
-                      backgroundColor: 'whiteAlpha.100',
-                    },
-                    '&::-webkit-scrollbar-thumb': {
-                      backgroundColor: 'whiteAlpha.300',
-                      borderRadius: '6px',
-                      '&:hover': {
-                        backgroundColor: 'whiteAlpha.400',
-                      },
-                    },
-                  }}
-                />
-              </Box>
-            </Box>
-
-            <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3} width="100%">
-              <Button
-                size={{ base: "md", md: "md" }}
-                onClick={handleLogSession}
-                bgGradient="linear(to-r, blue.400, blue.600)"
-                color="white"
-                _hover={{
-                  bgGradient: "linear(to-r, blue.500, blue.700)",
-                  transform: "translateY(-1px)",
-                  boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)"
-                }}
-                _active={{
-                  transform: "translateY(0)",
-                  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
-                }}
-                transition="all 0.2s"
-                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-                fontWeight="semibold"
+                ❄️ Cold Shower Challenge
+              </Heading>
+              <Text 
+                fontSize={{ base: "sm", md: "md" }}
+                fontWeight="medium"
+                color="whiteAlpha.900"
                 letterSpacing="wide"
-                borderRadius="xl"
-                height="48px"
-                isDisabled={isAnimating}
+                textShadow="0 1px 2px rgba(0,0,0,0.1)"
               >
-                Log Today's Session
-              </Button>
-              <Button
-                size={{ base: "md", md: "md" }}
-                onClick={onPastDateOpen}
-                bg="whiteAlpha.200"
-                color="white"
-                _hover={{
-                  bg: "whiteAlpha.300",
-                  transform: "translateY(-1px)",
-                  boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)"
-                }}
-                _active={{
-                  transform: "translateY(0)",
-                  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
-                }}
-                transition="all 0.2s"
-                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-                fontWeight="semibold"
-                letterSpacing="wide"
-                borderRadius="xl"
-                height="48px"
-                backdropFilter="blur(8px)"
-                isDisabled={isAnimating}
-              >
-                Log Past Date
-              </Button>
-            </Grid>
-
-            <Button
-              size={{ base: "md", md: "md" }}
-              variant="outline"
-              onClick={() => setShowResetModal(true)}
-              borderColor="red.400"
-              borderWidth="2px"
-              color="red.400"
-              _hover={{
-                bg: "rgba(255, 0, 0, 0.1)",
-                transform: "translateY(-1px)",
-                boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)"
-              }}
-              _active={{
-                transform: "translateY(0)",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
-              }}
-              transition="all 0.2s"
-              boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-              width="100%"
-              fontWeight="semibold"
-              letterSpacing="wide"
-              borderRadius="xl"
-              height="48px"
-              isDisabled={isAnimating}
-            >
-              Reset Challenge
-            </Button>
+                Let's do this{challengeData.userName && challengeData.userName !== 'User' ? `, ${challengeData.userName}` : ''}! 💪
+              </Text>
+            </Box>
           </VStack>
 
-          {sortedNotes.length > 0 && (
-            <Box
-              display={{ base: "block", md: "block", lg: "block" }}
-              position={{ base: "relative", lg: "sticky" }}
-              top={4}
-              height="fit-content"
-              maxHeight={{ base: "400px", lg: "calc(100vh - 2rem)" }}
-              overflowY="auto"
-              bg={{ base: "whiteAlpha.100", lg: "whiteAlpha.100" }}
-              backdropFilter="blur(8px)"
-              borderRadius="xl"
-              boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-              mt={{ base: 4, lg: 0 }}
-              width="100%"
-              sx={{
-                '&::-webkit-scrollbar': {
-                  width: '6px',
-                  borderRadius: '6px',
-                  backgroundColor: 'whiteAlpha.100',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  backgroundColor: 'whiteAlpha.300',
-                  borderRadius: '6px',
-                  '&:hover': {
-                    backgroundColor: 'whiteAlpha.400',
-                  },
-                },
-              }}
-            >
-              <Box
-                position="sticky"
-                top={0}
-                zIndex={2}
-                bg={{ base: "blue.600", lg: "whiteAlpha.100" }}
-                backdropFilter="blur(8px)"
-                borderTopRadius="xl"
-                borderBottom="1px solid"
-                borderColor="whiteAlpha.200"
-                p={{ base: 3, md: 5 }}
+          <Grid
+            templateColumns={{ base: "1fr", lg: "1fr 450px" }}
+            gap={{ base: 4, lg: 6 }}
+          >
+            <VStack gap={{ base: 4, md: 6 }}>
+              <Grid 
+                templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
+                gap={{ base: 3, md: 4 }}
+                width="100%"
               >
-                <VStack align="stretch" spacing={4}>
-                  <Text fontWeight="semibold" fontSize="md" letterSpacing="wide">
-                    ✍️ Session Notes
+                <Box 
+                  p={{ base: 4, md: 5 }}
+                  borderRadius="xl"
+                  bg="whiteAlpha.100"
+                  backdropFilter="blur(8px)"
+                  boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+                  textAlign="center"
+                  transform="translateY(0)"
+                  transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                  position="relative"
+                  overflow="hidden"
+                  _before={{
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    bgGradient: currentStreak >= 10 ? "linear(to-r, blue.200, blue.500, purple.500)" : "linear(to-br, whiteAlpha.50, transparent)",
+                    opacity: currentStreak >= 10 ? 0.8 : 0,
+                    transition: "opacity 0.3s",
+                    animation: currentStreak >= 10 ? "glow 1.5s infinite alternate" : "none",
+                    borderRadius: "xl",
+                    zIndex: -1
+                  }}
+                  _hover={{
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)",
+                    _before: {
+                      opacity: 1
+                    }
+                  }}
+                >
+                  <Box position="relative" zIndex={1}>
+                    <Text 
+                      fontSize={{ base: "2xl", md: "3xl" }} 
+                      fontWeight="bold" 
+                      bgGradient={currentStreak > 0 ? "linear(to-r, blue.100, blue.300)" : "linear(to-r, whiteAlpha.900, whiteAlpha.600)"}
+                      bgClip="text"
+                      mb={1} 
+                      textShadow="0 1px 2px rgba(0,0,0,0.1)"
+                    >
+                      {currentStreak}
+                    </Text>
+                    <Text color="whiteAlpha.900" fontWeight="medium" letterSpacing="wide">Day Streak</Text>
+                  </Box>
+                </Box>
+                <Box 
+                  p={{ base: 4, md: 5 }}
+                  borderRadius="xl"
+                  bg="whiteAlpha.100"
+                  backdropFilter="blur(8px)"
+                  boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+                  textAlign="center"
+                  transform="translateY(0)"
+                  transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                  position="relative"
+                  overflow="hidden"
+                  _before={{
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    bgGradient: "linear(to-br, whiteAlpha.50, transparent)",
+                    opacity: 0,
+                    transition: "opacity 0.3s"
+                  }}
+                  _hover={{
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)",
+                    _before: {
+                      opacity: 1
+                    }
+                  }}
+                >
+                  <Box position="relative" zIndex={1}>
+                    <Text 
+                      fontSize={{ base: "2xl", md: "3xl" }} 
+                      fontWeight="bold" 
+                      bgGradient="linear(to-r, blue.100, blue.300)"
+                      bgClip="text"
+                      mb={1} 
+                      textShadow="0 1px 2px rgba(0,0,0,0.1)"
+                    >
+                      {completedDays}
+                    </Text>
+                    <Text color="whiteAlpha.900" fontWeight="medium" letterSpacing="wide">Days Completed</Text>
+                  </Box>
+                </Box>
+                <Box 
+                  p={{ base: 4, md: 5 }}
+                  borderRadius="xl"
+                  bg="whiteAlpha.100"
+                  backdropFilter="blur(8px)"
+                  boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+                  textAlign="center"
+                  transform="translateY(0)"
+                  transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                  position="relative"
+                  overflow="hidden"
+                  _before={{
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    bgGradient: "linear(to-br, whiteAlpha.50, transparent)",
+                    opacity: 0,
+                    transition: "opacity 0.3s"
+                  }}
+                  _hover={{
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)",
+                    _before: {
+                      opacity: 1
+                    }
+                  }}
+                >
+                  <Box position="relative" zIndex={1}>
+                    <Text 
+                      fontSize={{ base: "2xl", md: "3xl" }} 
+                      fontWeight="bold" 
+                      bgGradient={daysLeft > 0 ? "linear(to-r, blue.100, blue.300)" : "linear(to-r, green.200, green.400)"}
+                      bgClip="text"
+                      mb={1} 
+                      textShadow="0 1px 2px rgba(0,0,0,0.1)"
+                    >
+                      {daysLeft}
+                    </Text>
+                    <Text color="whiteAlpha.900" fontWeight="medium" letterSpacing="wide">Days Left</Text>
+                  </Box>
+                </Box>
+              </Grid>
+
+              <Box 
+                width="100%" 
+                bg="whiteAlpha.100"
+                backdropFilter="blur(8px)"
+                p={{ base: 4, md: 5 }}
+                borderRadius="xl"
+                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+                position="relative"
+                overflow="hidden"
+                _before={{
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  bgGradient: "linear(to-br, whiteAlpha.50, transparent)",
+                  opacity: 0,
+                  transition: "opacity 0.3s"
+                }}
+                _hover={{
+                  _before: {
+                    opacity: 1
+                  }
+                }}
+              >
+                <Flex justify="space-between" align="center" mb={3}>
+                  <Text fontWeight="semibold" color="white" fontSize={{ base: "sm", md: "md" }} letterSpacing="wide">
+                    Progress
                   </Text>
-                  <Box
-                    bg="whiteAlpha.200"
-                    p={{ base: 2, md: 4 }}
-                    borderRadius="xl"
-                    borderWidth="0.5px"
-                    borderColor="whiteAlpha.300"
-                    position="relative"
-                    overflow="hidden"
-                    transition="all 0.2s"
-                    _hover={{
-                      borderColor: "whiteAlpha.400",
-                      bg: "whiteAlpha.300",
-                      transform: "translateY(-1px)",
-                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-                      _before: {
-                        opacity: 1
-                      }
-                    }}
-                    _before={{
-                      content: '""',
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      bgGradient: "linear(to-br, whiteAlpha.50, transparent)",
-                      opacity: 0,
-                      transition: "opacity 0.3s"
-                    }}
-                  >
-                    <HStack spacing={{ base: 2, md: 4 }} align="center" flexWrap="nowrap">
-                      <Box flex="1">
-                        <Text fontSize="xs" color="whiteAlpha.700" mb={1} fontWeight="medium">
-                          Start Date
-                        </Text>
-                        <Input
-                          type="date"
-                          width="100%"
-                          minW={{ base: "120px", md: "initial" }}
-                          px={{ base: 2, md: 4 }}
-                          whiteSpace="nowrap"
-                          bg="whiteAlpha.100"
-                          color="white"
-                          borderRadius="lg"
-                          borderWidth="0.5px"
-                          borderColor="whiteAlpha.300"
-                          fontSize={{ base: "md", md: "sm" }}
-                          _hover={{ borderColor: "whiteAlpha.400" }}
-                          _focus={{
-                            borderColor: "blue.400",
-                            boxShadow: "0 0 0 1px rgba(66,153,225,0.6)"
-                          }}
-                        />
-                      </Box>
-                      <Box flex="1">
-                        <Text fontSize="xs" color="whiteAlpha.700" mb={1} fontWeight="medium">
-                          End Date
-                        </Text>
-                        <Input
-                          type="date"
-                          width="100%"
-                          minW={{ base: "120px", md: "initial" }}
-                          px={{ base: 2, md: 4 }}
-                          whiteSpace="nowrap"
-                          bg="whiteAlpha.100"
-                          color="white"
-                          borderRadius="lg"
-                          borderWidth="0.5px"
-                          borderColor="whiteAlpha.300"
-                          fontSize={{ base: "md", md: "sm" }}
-                          _hover={{ borderColor: "whiteAlpha.400" }}
-                          _focus={{
-                            borderColor: "blue.400",
-                            boxShadow: "0 0 0 1px rgba(66,153,225,0.6)"
-                          }}
-                        />
-                      </Box>
+                  <Flex align="center" gap={3}>
+                    <Tooltip label="Change challenge duration" placement="top">
                       <IconButton
-                        aria-label="Clear filter"
-                        icon={<CloseIcon />}
+                        aria-label="Change duration"
+                        icon={<CalendarIcon />}
                         size="sm"
-                        onClick={() => setDateFilter({ startDate: null, endDate: null })}
                         variant="ghost"
                         color="white"
-                        _hover={{ bg: "whiteAlpha.200", transform: "scale(1.05)" }}
-                        isDisabled={!dateFilter.startDate && !dateFilter.endDate}
-                        alignSelf="flex-end"
-                        mb={1}
+                        onClick={() => setShowDurationModal(true)}
+                        _hover={{
+                          bg: "whiteAlpha.200",
+                          transform: "scale(1.05)"
+                        }}
                         transition="all 0.2s"
                       />
-                    </HStack>
-                  </Box>
-                </VStack>
-              </Box>
-              <Box p={5}>
-                <VStack align="stretch" spacing={3} width="100%">
-                  {filteredNotes.map((noteData, index) => (
-                    <Box 
-                      key={index} 
-                      p={3}
-                      bg="whiteAlpha.100"
-                      borderRadius="xl"
+                    </Tooltip>
+                    <Text 
+                      fontWeight="bold" 
+                      fontSize={{ base: "lg", md: "xl" }}
+                      bgGradient={
+                        progress >= 100 ? "linear(to-r, blue.200, blue.400)" :
+                        progress >= 75 ? "linear(to-r, cyan.200, cyan.400)" :
+                        progress >= 50 ? "linear(to-r, green.200, green.400)" :
+                        progress >= 25 ? "linear(to-r, purple.200, purple.400)" :
+                        "linear(to-r, pink.200, pink.400)"
+                      }
+                      bgClip="text"
+                    >
+                      {Math.round(progress)}%
+                    </Text>
+                  </Flex>
+                </Flex>
+                <Box
+                  width="100%"
+                  height="16px"
+                  bg="whiteAlpha.100"
+                  borderRadius="full"
+                  overflow="hidden"
+                  position="relative"
+                  boxShadow="inset 0 1px 2px rgba(0,0,0,0.1)"
+                >
+                  <Tooltip
+                    label={
+                      <Box p={2}>
+                        <Text fontWeight="bold" color={levelInfo.color} mb={1}>
+                          {levelInfo.label}
+                        </Text>
+                        <Text fontSize="sm" color="white">
+                          {levelInfo.description}
+                        </Text>
+                        <Text fontSize="xs" color="whiteAlpha.800" mt={1}>
+                          Progress: {Math.round(progress)}%
+                        </Text>
+                        {currentStreak > 0 && (
+                          <Text fontSize="xs" color="whiteAlpha.800">
+                            Current Streak: {currentStreak} days
+                          </Text>
+                        )}
+                      </Box>
+                    }
+                    placement="top"
+                    hasArrow
+                    bg="rgba(0, 0, 0, 0.8)"
+                    borderRadius="md"
+                    px={3}
+                    py={2}
+                  >
+                    <Box
+                      width={`${progress}%`}
+                      height="100%"
+                      bgGradient={
+                        progress >= 100 ? "linear(to-r, blue.200, blue.400)" :
+                        progress >= 75 ? "linear(to-r, cyan.200, cyan.400)" :
+                        progress >= 50 ? "linear(to-r, green.200, green.400)" :
+                        progress >= 25 ? "linear(to-r, purple.200, purple.400)" :
+                        "linear(to-r, pink.200, pink.400)"
+                      }
+                      borderRadius="full"
+                      transition="all 1s cubic-bezier(0.4, 0, 0.2, 1)"
                       position="relative"
+                      _after={{
+                        content: '""',
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
+                        transform: "translateX(-100%)",
+                        animation: "shine 2s infinite"
+                      }}
+                    />
+                  </Tooltip>
+                </Box>
+                <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(2, 1fr)" }} gap={3} mt={4}>
+                  <Box>
+                    <Text fontWeight="medium" color="whiteAlpha.700" fontSize="xs" mb={1} letterSpacing="wide">Start Date</Text>
+                    <Text fontWeight="semibold" color="white" fontSize={{ base: "xs", md: "sm" }}>
+                      {format(new Date(challengeData.startDate + 'T00:00:00'), 'MM/dd/yy')}
+                    </Text>
+                  </Box>
+                  <Box textAlign="right">
+                    <Text fontWeight="medium" color="whiteAlpha.700" fontSize="xs" mb={1} letterSpacing="wide">End Date</Text>
+                    <Text fontWeight="semibold" color="white" fontSize={{ base: "xs", md: "sm" }}>
+                      {format(
+                        new Date(new Date(challengeData.startDate + 'T00:00:00').setDate(
+                          new Date(challengeData.startDate + 'T00:00:00').getDate() + challengeData.days - 1
+                        )),
+                        'MM/dd/yy'
+                      )}
+                    </Text>
+                  </Box>
+                </Grid>
+              </Box>
+
+              <MilestoneDisplay currentProgress={progress} />
+
+              <ChallengeGrid 
+                challengeData={challengeData}
+                onEditNote={handleEditNote}
+                onDeleteDate={handleDeleteNote}
+              />
+
+              <Box 
+                width="100%" 
+                bg="whiteAlpha.100"
+                backdropFilter="blur(8px)"
+                p={{ base: 4, md: 5 }}
+                borderRadius="xl"
+                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+                position="relative"
+                transition="all 0.3s"
+                _hover={{
+                  boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)",
+                  transform: "translateY(-1px)"
+                }}
+              >
+                <Flex justify="space-between" align="center" mb={3}>
+                  <Text fontWeight="semibold" color="white" fontSize={{ base: "sm", md: "md" }} letterSpacing="wide">
+                    Today's Note
+                  </Text>
+                </Flex>
+                <Box
+                  position="relative"
+                  transition="all 0.3s"
+                >
+                  <Textarea
+                    value={note}
+                    onChange={(e) => {
+                      setNote(e.target.value);
+                    }}
+                    placeholder="How was your cold shower experience today? Share your thoughts, feelings, and any breakthroughs..."
+                    minH={{ base: "80px", md: "80px" }}
+                    maxH="240px"
+                    bg="whiteAlpha.100"
+                    color="white"
+                    borderColor="whiteAlpha.300"
+                    borderRadius="xl"
+                    _hover={{ 
+                      borderColor: "whiteAlpha.400",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
+                    }}
+                    _focus={{ 
+                      borderColor: "blue.400",
+                      boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6), 0 2px 6px rgba(0,0,0,0.1)"
+                    }}
+                    _placeholder={{ 
+                      color: "whiteAlpha.600",
+                      fontStyle: "italic",
+                      fontSize: { base: "xs", md: "sm" }
+                    }}
+                    fontSize={{ base: "md", md: "sm" }}
+                    resize="vertical"
+                    transition="all 0.2s"
+                    sx={{
+                      '&::-webkit-scrollbar': {
+                        width: '6px',
+                        borderRadius: '6px',
+                        backgroundColor: 'whiteAlpha.100',
+                      },
+                      '&::-webkit-scrollbar-thumb': {
+                        backgroundColor: 'whiteAlpha.300',
+                        borderRadius: '6px',
+                        '&:hover': {
+                          backgroundColor: 'whiteAlpha.400',
+                        },
+                      },
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3} width="100%">
+                <Button
+                  size={{ base: "md", md: "md" }}
+                  onClick={handleLogSession}
+                  bgGradient="linear(to-r, blue.400, blue.600)"
+                  color="white"
+                  _hover={{
+                    bgGradient: "linear(to-r, blue.500, blue.700)",
+                    transform: "translateY(-1px)",
+                    boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)"
+                  }}
+                  _active={{
+                    transform: "translateY(0)",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
+                  }}
+                  transition="all 0.2s"
+                  boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+                  fontWeight="semibold"
+                  letterSpacing="wide"
+                  borderRadius="xl"
+                  height="48px"
+                  isDisabled={isAnimating}
+                >
+                  Log Today's Session
+                </Button>
+                <Button
+                  size={{ base: "md", md: "md" }}
+                  onClick={onPastDateOpen}
+                  bg="whiteAlpha.200"
+                  color="white"
+                  _hover={{
+                    bg: "whiteAlpha.300",
+                    transform: "translateY(-1px)",
+                    boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)"
+                  }}
+                  _active={{
+                    transform: "translateY(0)",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
+                  }}
+                  transition="all 0.2s"
+                  boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+                  fontWeight="semibold"
+                  letterSpacing="wide"
+                  borderRadius="xl"
+                  height="48px"
+                  backdropFilter="blur(8px)"
+                  isDisabled={isAnimating}
+                >
+                  Log Past Date
+                </Button>
+              </Grid>
+
+              <Button
+                size={{ base: "md", md: "md" }}
+                variant="outline"
+                onClick={() => setShowResetModal(true)}
+                borderColor="red.400"
+                borderWidth="2px"
+                color="red.400"
+                _hover={{
+                  bg: "rgba(255, 0, 0, 0.1)",
+                  transform: "translateY(-1px)",
+                  boxShadow: "0 6px 8px rgba(0, 0, 0, 0.15)"
+                }}
+                _active={{
+                  transform: "translateY(0)",
+                  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
+                }}
+                transition="all 0.2s"
+                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+                width="100%"
+                fontWeight="semibold"
+                letterSpacing="wide"
+                borderRadius="xl"
+                height="48px"
+                isDisabled={isAnimating}
+              >
+                Reset Challenge
+              </Button>
+            </VStack>
+
+            {sortedNotes.length > 0 && (
+              <Box
+                display={{ base: "block", md: "block", lg: "block" }}
+                position={{ base: "relative", lg: "sticky" }}
+                top={4}
+                height="fit-content"
+                maxHeight={{ base: "400px", lg: "calc(100vh - 2rem)" }}
+                overflowY="auto"
+                bg={{ base: "whiteAlpha.100", lg: "whiteAlpha.100" }}
+                backdropFilter="blur(8px)"
+                borderRadius="xl"
+                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+                mt={{ base: 4, lg: 0 }}
+                width="100%"
+                sx={{
+                  '&::-webkit-scrollbar': {
+                    width: '6px',
+                    borderRadius: '6px',
+                    backgroundColor: 'whiteAlpha.100',
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    backgroundColor: 'whiteAlpha.300',
+                    borderRadius: '6px',
+                    '&:hover': {
+                      backgroundColor: 'whiteAlpha.400',
+                    },
+                  },
+                }}
+              >
+                <Box
+                  position="sticky"
+                  top={0}
+                  zIndex={2}
+                  bg={{ base: "blue.600", lg: "whiteAlpha.100" }}
+                  backdropFilter="blur(8px)"
+                  borderTopRadius="xl"
+                  borderBottom="1px solid"
+                  borderColor="whiteAlpha.200"
+                  p={{ base: 3, md: 5 }}
+                >
+                  <VStack align="stretch" spacing={4}>
+                    <Text fontWeight="semibold" fontSize="md" letterSpacing="wide">
+                      ✍️ Session Notes
+                    </Text>
+                    <Box
+                      bg="whiteAlpha.200"
+                      p={{ base: 2, md: 4 }}
+                      borderRadius="xl"
+                      borderWidth="0.5px"
+                      borderColor="whiteAlpha.300"
+                      position="relative"
+                      overflow="hidden"
                       transition="all 0.2s"
                       _hover={{
-                        bg: "whiteAlpha.200",
+                        borderColor: "whiteAlpha.400",
+                        bg: "whiteAlpha.300",
                         transform: "translateY(-1px)",
-                        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
+                        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                        _before: {
+                          opacity: 1
+                        }
                       }}
-                      boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-                      width="100%"
+                      _before={{
+                        content: '""',
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        bgGradient: "linear(to-br, whiteAlpha.50, transparent)",
+                        opacity: 0,
+                        transition: "opacity 0.3s"
+                      }}
                     >
-                      <VStack align="stretch" width="100%" spacing={2}>
-                        <Flex justify="space-between" align="center" width="100%">
-                          <Flex align="baseline" gap={3}>
-                            <Text 
-                              fontWeight="semibold" 
-                              color="white"
-                              fontSize="sm"
-                              letterSpacing="wide"
-                              flexShrink={0}
-                            >
-                              {formatDate(noteData.date)}
-                            </Text>
-                            <VStack align="flex-start" spacing={0}>
+                      <HStack spacing={{ base: 2, md: 4 }} align="center" flexWrap="nowrap">
+                        <Box flex="1">
+                          <Text fontSize="xs" color="whiteAlpha.700" mb={1} fontWeight="medium">
+                            Start Date
+                          </Text>
+                          <Input
+                            type="date"
+                            width="100%"
+                            minW={{ base: "120px", md: "initial" }}
+                            px={{ base: 2, md: 4 }}
+                            whiteSpace="nowrap"
+                            bg="whiteAlpha.100"
+                            color="white"
+                            borderRadius="lg"
+                            borderWidth="0.5px"
+                            borderColor="whiteAlpha.300"
+                            fontSize={{ base: "md", md: "sm" }}
+                            _hover={{ borderColor: "whiteAlpha.400" }}
+                            _focus={{
+                              borderColor: "blue.400",
+                              boxShadow: "0 0 0 1px rgba(66,153,225,0.6)"
+                            }}
+                          />
+                        </Box>
+                        <Box flex="1">
+                          <Text fontSize="xs" color="whiteAlpha.700" mb={1} fontWeight="medium">
+                            End Date
+                          </Text>
+                          <Input
+                            type="date"
+                            width="100%"
+                            minW={{ base: "120px", md: "initial" }}
+                            px={{ base: 2, md: 4 }}
+                            whiteSpace="nowrap"
+                            bg="whiteAlpha.100"
+                            color="white"
+                            borderRadius="lg"
+                            borderWidth="0.5px"
+                            borderColor="whiteAlpha.300"
+                            fontSize={{ base: "md", md: "sm" }}
+                            _hover={{ borderColor: "whiteAlpha.400" }}
+                            _focus={{
+                              borderColor: "blue.400",
+                              boxShadow: "0 0 0 1px rgba(66,153,225,0.6)"
+                            }}
+                          />
+                        </Box>
+                        <IconButton
+                          aria-label="Clear filter"
+                          icon={<CloseIcon />}
+                          size="sm"
+                          onClick={() => setDateFilter({ startDate: null, endDate: null })}
+                          variant="ghost"
+                          color="white"
+                          _hover={{ bg: "whiteAlpha.200", transform: "scale(1.05)" }}
+                          isDisabled={!dateFilter.startDate && !dateFilter.endDate}
+                          alignSelf="flex-end"
+                          mb={1}
+                          transition="all 0.2s"
+                        />
+                      </HStack>
+                    </Box>
+                  </VStack>
+                </Box>
+                <Box p={5}>
+                  <VStack align="stretch" spacing={3} width="100%">
+                    {filteredNotes.map((noteData, index) => (
+                      <Box 
+                        key={index} 
+                        p={3}
+                        bg="whiteAlpha.100"
+                        borderRadius="xl"
+                        position="relative"
+                        transition="all 0.2s"
+                        _hover={{
+                          bg: "whiteAlpha.200",
+                          transform: "translateY(-1px)",
+                          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
+                        }}
+                        boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+                        width="100%"
+                      >
+                        <VStack align="stretch" width="100%" spacing={2}>
+                          <Flex justify="space-between" align="center" width="100%">
+                            <Flex align="baseline" gap={3}>
                               <Text 
-                                fontSize="xs" 
-                                color="whiteAlpha.600"
+                                fontWeight="semibold" 
+                                color="white"
+                                fontSize="sm"
+                                letterSpacing="wide"
+                                flexShrink={0}
                               >
-                                Created on {formatTimestamp(noteData.createdAt)}
+                                {formatDate(noteData.date)}
                               </Text>
-                              {noteData.updatedAt !== noteData.createdAt && (
+                              <VStack align="flex-start" spacing={0}>
                                 <Text 
                                   fontSize="xs" 
                                   color="whiteAlpha.600"
                                 >
-                                  Last edited on {formatTimestamp(noteData.updatedAt)}
+                                  Created on {formatTimestamp(noteData.createdAt)}
                                 </Text>
-                              )}
-                            </VStack>
+                                {noteData.updatedAt !== noteData.createdAt && (
+                                  <Text 
+                                    fontSize="xs" 
+                                    color="whiteAlpha.600"
+                                  >
+                                    Last edited on {formatTimestamp(noteData.updatedAt)}
+                                  </Text>
+                                )}
+                              </VStack>
+                            </Flex>
+                            <Flex gap={2} flexShrink={0}>
+                              <IconButton
+                                icon={<EditIcon />}
+                                aria-label="Edit note"
+                                size="sm"
+                                onClick={() => handleEditNote(noteData.date, noteData.note)}
+                                variant="ghost"
+                                color="white"
+                                _hover={{ bg: "whiteAlpha.200" }}
+                                borderRadius="lg"
+                                transition="all 0.2s"
+                              />
+                              <IconButton
+                                icon={<DeleteIcon />}
+                                aria-label="Remove date"
+                                size="sm"
+                                onClick={() => handleDeleteNote(noteData.date)}
+                                variant="ghost"
+                                color="white"
+                                _hover={{ bg: "whiteAlpha.200" }}
+                                borderRadius="lg"
+                                transition="all 0.2s"
+                              />
+                            </Flex>
                           </Flex>
-                          <Flex gap={2} flexShrink={0}>
-                            <IconButton
-                              icon={<EditIcon />}
-                              aria-label="Edit note"
-                              size="sm"
-                              onClick={() => handleEditNote(noteData.date, noteData.note)}
-                              variant="ghost"
-                              color="white"
-                              _hover={{ bg: "whiteAlpha.200" }}
-                              borderRadius="lg"
-                              transition="all 0.2s"
-                            />
-                            <IconButton
-                              icon={<DeleteIcon />}
-                              aria-label="Remove date"
-                              size="sm"
-                              onClick={() => handleDeleteNote(noteData.date)}
-                              variant="ghost"
-                              color="white"
-                              _hover={{ bg: "whiteAlpha.200" }}
-                              borderRadius="lg"
-                              transition="all 0.2s"
-                            />
-                          </Flex>
-                        </Flex>
-                        <Text 
-                          color="whiteAlpha.900" 
-                          fontSize="xs" 
-                          wordBreak="break-word"
-                          whiteSpace="pre-wrap"
-                          width="95%"
-                          textAlign="justify"
-                          ml="0"
-                        >
-                          {noteData.note}
-                        </Text>
-                      </VStack>
-                    </Box>
-                  ))}
-                </VStack>
+                          <Text 
+                            color="whiteAlpha.900" 
+                            fontSize="xs" 
+                            wordBreak="break-word"
+                            whiteSpace="pre-wrap"
+                            width="95%"
+                            textAlign="justify"
+                            ml="0"
+                          >
+                            {noteData.note}
+                          </Text>
+                        </VStack>
+                      </Box>
+                    ))}
+                  </VStack>
+                </Box>
               </Box>
-            </Box>
-          )}
+            )}
 
-          {sortedNotes.length === 0 && (
-            <Box 
-              display={{ base: "block", md: "block", lg: "block" }}
-              position={{ base: "relative", lg: "sticky" }}
-              top={4}
-              height="fit-content"
-              maxHeight={{ base: "400px", lg: "calc(100vh - 2rem)" }}
-              overflowY="auto"
-              bg={{ base: "whiteAlpha.100", lg: "whiteAlpha.100" }}
-              backdropFilter="blur(8px)"
-              borderRadius="xl"
-              boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-              mt={{ base: 4, lg: 0 }}
-              sx={{
-                '&::-webkit-scrollbar': {
-                  width: '6px',
-                  borderRadius: '6px',
-                  backgroundColor: 'whiteAlpha.100',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  backgroundColor: 'whiteAlpha.300',
-                  borderRadius: '6px',
-                  '&:hover': {
-                    backgroundColor: 'whiteAlpha.400',
+            {sortedNotes.length === 0 && (
+              <Box 
+                display={{ base: "block", md: "block", lg: "block" }}
+                position={{ base: "relative", lg: "sticky" }}
+                top={4}
+                height="fit-content"
+                maxHeight={{ base: "400px", lg: "calc(100vh - 2rem)" }}
+                overflowY="auto"
+                bg={{ base: "whiteAlpha.100", lg: "whiteAlpha.100" }}
+                backdropFilter="blur(8px)"
+                borderRadius="xl"
+                boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+                mt={{ base: 4, lg: 0 }}
+                sx={{
+                  '&::-webkit-scrollbar': {
+                    width: '6px',
+                    borderRadius: '6px',
+                    backgroundColor: 'whiteAlpha.100',
                   },
-                },
-              }}
-            >
-              <Box p={5}>
-                <Text fontWeight="semibold" fontSize="md" letterSpacing="wide" mb={3}>
-                  ✍️ Session Notes
-                </Text>
-                <Text color="whiteAlpha.700" fontSize="sm">
-                  No notes yet. Start logging your sessions to see them here.
-                </Text>
+                  '&::-webkit-scrollbar-thumb': {
+                    backgroundColor: 'whiteAlpha.300',
+                    borderRadius: '6px',
+                    '&:hover': {
+                      backgroundColor: 'whiteAlpha.400',
+                    },
+                  },
+                }}
+              >
+                <Box p={5}>
+                  <Text fontWeight="semibold" fontSize="md" letterSpacing="wide" mb={3}>
+                    ✍️ Session Notes
+                  </Text>
+                  <Text color="whiteAlpha.700" fontSize="sm">
+                    No notes yet. Start logging your sessions to see them here.
+                  </Text>
+                </Box>
               </Box>
-            </Box>
-          )}
-        </Grid>
-      </Box>
+            )}
+          </Grid>
+        </Box>
 
-      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
-        <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.600" />
-        <ModalContent bg="blue.900" borderRadius="xl" mx={3}>
-          <ModalHeader bgGradient="linear(to-r, blue.400, blue.600)" color="white" borderTopRadius="xl">Edit Note</ModalHeader>
-          <ModalCloseButton color="white" />
-          <ModalBody p={5}>
-            <Text fontWeight="semibold" mb={2} color="white" letterSpacing="wide">
-              {selectedDate && format(parseISO(selectedDate), 'MMMM d, yyyy')}
-            </Text>
-            <Textarea
-              value={editedNoteText}
-              onChange={(e) => setEditedNoteText(e.target.value)}
-              placeholder="Enter your note"
-              bg="whiteAlpha.200"
-              color="white"
-              borderColor="whiteAlpha.300"
+        <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
+          <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.600" />
+          <ModalContent bg="blue.900" borderRadius="xl" mx={3}>
+            <ModalHeader bgGradient="linear(to-r, blue.400, blue.600)" color="white" borderTopRadius="xl">Edit Note</ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody p={5}>
+              <Text fontWeight="semibold" mb={2} color="white" letterSpacing="wide">
+                {selectedDate && format(parseISO(selectedDate), 'MMMM d, yyyy')}
+              </Text>
+              <Textarea
+                value={editedNoteText}
+                onChange={(e) => setEditedNoteText(e.target.value)}
+                placeholder="Enter your note"
+                bg="whiteAlpha.200"
+                color="white"
+                borderColor="whiteAlpha.300"
+                borderRadius="xl"
+                _hover={{ borderColor: "whiteAlpha.400" }}
+                _focus={{ 
+                  borderColor: "whiteAlpha.500",
+                  boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.5)"
+                }}
+                _placeholder={{ color: "whiteAlpha.600" }}
+                fontSize={{ base: "md", md: "sm" }}
+                resize="vertical"
+              />
+            </ModalBody>
+            <ModalFooter bg="whiteAlpha.100" borderBottomRadius="xl" gap={2}>
+              <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} color="white" _hover={{ bg: "whiteAlpha.200" }}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveEdit}
+                bgGradient="linear(to-r, blue.400, blue.600)"
+                color="white"
+                isDisabled={!selectedDate || !editedNoteText.trim() || challengeData.notes[selectedDate]?.note === editedNoteText}
+                _hover={{
+                  bgGradient: "linear(to-r, blue.500, blue.700)",
+                }}
+                _active={{
+                  bgGradient: "linear(to-r, blue.600, blue.800)",
+                }}
+              >
+                Save Changes
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        <AlertDialog
+          isOpen={isDeleteAlertOpen}
+          leastDestructiveRef={cancelRef}
+          onClose={() => setIsDeleteAlertOpen(false)}
+        >
+          <AlertDialogOverlay backdropFilter="blur(2px)" bg="blackAlpha.600">
+            <AlertDialogContent
+              bg="rgba(30, 64, 110, 0.45)"
               borderRadius="xl"
-              _hover={{ borderColor: "whiteAlpha.400" }}
-              _focus={{ 
-                borderColor: "whiteAlpha.500",
-                boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.5)"
-              }}
-              _placeholder={{ color: "whiteAlpha.600" }}
-              fontSize={{ base: "md", md: "sm" }}
-              resize="vertical"
-            />
-          </ModalBody>
-          <ModalFooter bg="whiteAlpha.100" borderBottomRadius="xl" gap={2}>
-            <Button variant="ghost" onClick={() => setIsEditModalOpen(false)} color="white" _hover={{ bg: "whiteAlpha.200" }}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSaveEdit}
-              bgGradient="linear(to-r, blue.400, blue.600)"
-              color="white"
-              isDisabled={!selectedDate || !editedNoteText.trim() || challengeData.notes[selectedDate]?.note === editedNoteText}
-              _hover={{
-                bgGradient: "linear(to-r, blue.500, blue.700)",
-              }}
-              _active={{
-                bgGradient: "linear(to-r, blue.600, blue.800)",
+              borderColor="whiteAlpha.200"
+              borderWidth="1px"
+              boxShadow="0 8px 32px rgba(0, 0, 0, 0.2)"
+              backdropFilter="blur(2px)"
+              sx={{
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  borderRadius: 'xl',
+                  background: 'linear-gradient(135deg, rgba(66, 153, 225, 0.08), rgba(49, 130, 206, 0.03))',
+                  pointerEvents: 'none'
+                }
               }}
             >
-              Save Changes
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+              <AlertDialogHeader fontSize="lg" fontWeight="bold" color="white">
+                Delete Entry
+              </AlertDialogHeader>
+              <AlertDialogBody color="whiteAlpha.900">
+                Are you sure you want to delete this entry? This action cannot be undone.
+              </AlertDialogBody>
+              <AlertDialogFooter gap={3}>
+                <Button 
+                  ref={cancelRef} 
+                  onClick={() => setIsDeleteAlertOpen(false)}
+                  variant="ghost"
+                  color="white"
+                  _hover={{ bg: "whiteAlpha.200" }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={confirmDelete}
+                  bgGradient="linear(to-r, red.500, red.600)"
+                  color="white"
+                  _hover={{
+                    bgGradient: "linear(to-r, red.600, red.700)",
+                  }}
+                  _active={{
+                    bgGradient: "linear(to-r, red.700, red.800)",
+                  }}
+                >
+                  Delete
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialogOverlay>
+        </AlertDialog>
 
-      <AlertDialog
-        isOpen={isDeleteAlertOpen}
-        leastDestructiveRef={cancelRef}
-        onClose={() => setIsDeleteAlertOpen(false)}
-      >
-        <AlertDialogOverlay backdropFilter="blur(2px)" bg="blackAlpha.600">
-          <AlertDialogContent
+        <Modal isOpen={showResetModal && !isAnimating} onClose={() => setShowResetModal(false)}>
+          <ModalOverlay backdropFilter="blur(2px)" bg="blackAlpha.600" />
+          <ModalContent 
             bg="rgba(30, 64, 110, 0.45)"
             borderRadius="xl"
             borderColor="whiteAlpha.200"
             borderWidth="1px"
             boxShadow="0 8px 32px rgba(0, 0, 0, 0.2)"
             backdropFilter="blur(2px)"
+            mx={3}
             sx={{
               '&::before': {
                 content: '""',
@@ -1737,24 +1697,22 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
               }
             }}
           >
-            <AlertDialogHeader fontSize="lg" fontWeight="bold" color="white">
-              Delete Entry
-            </AlertDialogHeader>
-            <AlertDialogBody color="whiteAlpha.900">
-              Are you sure you want to delete this entry? This action cannot be undone.
-            </AlertDialogBody>
-            <AlertDialogFooter gap={3}>
-              <Button 
-                ref={cancelRef} 
-                onClick={() => setIsDeleteAlertOpen(false)}
-                variant="ghost"
-                color="white"
-                _hover={{ bg: "whiteAlpha.200" }}
-              >
+            <ModalHeader color="red.400" borderTopRadius="xl">Reset Challenge</ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody p={5}>
+              <Text fontWeight="semibold" mb={2} color="white" letterSpacing="wide">
+                Are you sure you want to reset the challenge?
+              </Text>
+              <Text color="whiteAlpha.900">
+                This will delete all your progress, completed dates, and notes. This action cannot be undone.
+              </Text>
+            </ModalBody>
+            <ModalFooter borderBottomRadius="xl" gap={2}>
+              <Button variant="ghost" onClick={() => setShowResetModal(false)} color="white" _hover={{ bg: "whiteAlpha.200" }}>
                 Cancel
               </Button>
               <Button 
-                onClick={confirmDelete}
+                onClick={handleReset}
                 bgGradient="linear(to-r, red.500, red.600)"
                 color="white"
                 _hover={{
@@ -1764,218 +1722,163 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                   bgGradient: "linear(to-r, red.700, red.800)",
                 }}
               >
-                Delete
+                Reset Challenge
               </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
 
-      <Modal isOpen={showResetModal && !isAnimating} onClose={() => setShowResetModal(false)}>
-        <ModalOverlay backdropFilter="blur(2px)" bg="blackAlpha.600" />
-        <ModalContent 
-          bg="rgba(30, 64, 110, 0.45)"
-          borderRadius="xl"
-          borderColor="whiteAlpha.200"
-          borderWidth="1px"
-          boxShadow="0 8px 32px rgba(0, 0, 0, 0.2)"
-          backdropFilter="blur(2px)"
-          mx={3}
-          sx={{
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              borderRadius: 'xl',
-              background: 'linear-gradient(135deg, rgba(66, 153, 225, 0.08), rgba(49, 130, 206, 0.03))',
-              pointerEvents: 'none'
-            }
-          }}
-        >
-          <ModalHeader color="red.400" borderTopRadius="xl">Reset Challenge</ModalHeader>
-          <ModalCloseButton color="white" />
-          <ModalBody p={5}>
-            <Text fontWeight="semibold" mb={2} color="white" letterSpacing="wide">
-              Are you sure you want to reset the challenge?
-            </Text>
-            <Text color="whiteAlpha.900">
-              This will delete all your progress, completed dates, and notes. This action cannot be undone.
-            </Text>
-          </ModalBody>
-          <ModalFooter borderBottomRadius="xl" gap={2}>
-            <Button variant="ghost" onClick={() => setShowResetModal(false)} color="white" _hover={{ bg: "whiteAlpha.200" }}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleReset}
-              bgGradient="linear(to-r, red.500, red.600)"
-              color="white"
-              _hover={{
-                bgGradient: "linear(to-r, red.600, red.700)",
-              }}
-              _active={{
-                bgGradient: "linear(to-r, red.700, red.800)",
-              }}
-            >
-              Reset Challenge
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      <Modal isOpen={isPastDateOpen && !isAnimating} onClose={onPastDateClose}>
-        <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.600" />
-        <ModalContent bg="blue.900" borderRadius="xl" mx={3}>
-          <ModalHeader bgGradient="linear(to-r, blue.400, blue.600)" color="white" borderTopRadius="xl">Log Past Date</ModalHeader>
-          <ModalCloseButton color="white" />
-          <ModalBody p={5}>
-            <VStack spacing={3} align="stretch">
-              <Box>
-                <Text fontWeight="semibold" mb={1} color="white" letterSpacing="wide">
-                  Select Date
-                </Text>
-                <Input
-                  type="date"
-                  value={selectedPastDate}
-                  onChange={(e) => {
-                    if (e.target.value > todayStr) {
-                      return;
-                    }
-                    setSelectedPastDate(e.target.value);
-                  }}
-                  max={todayStr}
-                  min={challengeData.startDate}
-                  bg="whiteAlpha.200"
-                  color="white"
-                  borderColor="whiteAlpha.300"
-                  borderRadius="xl"
-                  _hover={{ borderColor: "whiteAlpha.400" }}
-                  _focus={{ 
-                    borderColor: "whiteAlpha.500",
-                    boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.5)"
-                  }}
-                  fontSize={{ base: "md", md: "sm" }}
-                />
-              </Box>
-              <Box>
-                <Text fontWeight="semibold" mb={1} color="white" letterSpacing="wide">
-                  Add Note (Optional)
-                </Text>
-                <Textarea
-                  value={pastDateNote}
-                  onChange={(e) => setPastDateNote(e.target.value)}
-                  placeholder="How was your cold shower experience on this day?"
-                  rows={3}
-                  bg="whiteAlpha.200"
-                  color="white"
-                  borderColor="whiteAlpha.300"
-                  borderRadius="xl"
-                  _hover={{ borderColor: "whiteAlpha.400" }}
-                  _focus={{ 
-                    borderColor: "whiteAlpha.500",
-                    boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.5)"
-                  }}
-                  _placeholder={{ color: "whiteAlpha.600" }}
-                  fontSize={{ base: "md", md: "sm" }}
-                  resize="vertical"
-                />
-              </Box>
-            </VStack>
-          </ModalBody>
-          <ModalFooter bg="whiteAlpha.100" borderBottomRadius="xl" gap={2}>
-            <Button variant="ghost" onClick={onPastDateClose} color="white" _hover={{ bg: "whiteAlpha.200" }}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleLogPastDate}
-              bgGradient="linear(to-r, blue.400, blue.600)"
-              color="white"
-              isDisabled={!selectedPastDate}
-              _hover={{
-                bgGradient: "linear(to-r, blue.500, blue.700)",
-              }}
-              _active={{
-                bgGradient: "linear(to-r, blue.600, blue.800)",
-              }}
-            >
-              Log Date
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      <Modal isOpen={showDurationModal && !isAnimating} onClose={() => setShowDurationModal(false)}>
-        <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.600" />
-        <ModalContent bg="blue.900" borderRadius="xl" mx={3}>
-          <ModalHeader bgGradient="linear(to-r, blue.400, blue.600)" color="white" borderTopRadius="xl">
-            Change Challenge Duration
-          </ModalHeader>
-          <ModalCloseButton color="white" />
-          <ModalBody p={5}>
-            <VStack spacing={3} align="stretch">
-              <Box>
-                <Text fontWeight="semibold" mb={1} color="white" letterSpacing="wide">
-                  Number of Days
-                </Text>
-                <NumberInput
-                  value={newDuration}
-                  onChange={(_, value) => setNewDuration(value || 0)}
-                  min={Math.max(10, completedDays)}
-                  max={365}
-                  bg="whiteAlpha.200"
-                  borderRadius="xl"
-                >
-                  <NumberInputField
+        <Modal isOpen={isPastDateOpen && !isAnimating} onClose={onPastDateClose}>
+          <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.600" />
+          <ModalContent bg="blue.900" borderRadius="xl" mx={3}>
+            <ModalHeader bgGradient="linear(to-r, blue.400, blue.600)" color="white" borderTopRadius="xl">Log Past Date</ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody p={5}>
+              <VStack spacing={3} align="stretch">
+                <Box>
+                  <Text fontWeight="semibold" mb={1} color="white" letterSpacing="wide">
+                    Select Date
+                  </Text>
+                  <Input
+                    type="date"
+                    value={selectedPastDate}
+                    onChange={(e) => {
+                      if (e.target.value > todayStr) {
+                        return;
+                      }
+                      setSelectedPastDate(e.target.value);
+                    }}
+                    max={todayStr}
+                    min={challengeData.startDate}
+                    bg="whiteAlpha.200"
                     color="white"
                     borderColor="whiteAlpha.300"
+                    borderRadius="xl"
                     _hover={{ borderColor: "whiteAlpha.400" }}
                     _focus={{ 
-                      borderColor: "blue.400",
-                      boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)"
+                      borderColor: "whiteAlpha.500",
+                      boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.5)"
                     }}
+                    fontSize={{ base: "md", md: "sm" }}
                   />
-                  <NumberInputStepper>
-                    <NumberIncrementStepper color="white" borderColor="whiteAlpha.300" />
-                    <NumberDecrementStepper color="white" borderColor="whiteAlpha.300" />
-                  </NumberInputStepper>
-                </NumberInput>
-                <Text fontSize="xs" color="whiteAlpha.700" mt={1}>
-                  Minimum duration is 10 days
-                </Text>
-              </Box>
-            </VStack>
-          </ModalBody>
-          <ModalFooter bg="whiteAlpha.100" borderBottomRadius="xl" gap={2}>
-            <Button variant="ghost" onClick={() => setShowDurationModal(false)} color="white" _hover={{ bg: "whiteAlpha.200" }}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleDurationChange}
-              bgGradient="linear(to-r, blue.400, blue.600)"
-              color="white"
-              _hover={{
-                bgGradient: "linear(to-r, blue.500, blue.700)",
-              }}
-              _active={{
-                bgGradient: "linear(to-r, blue.600, blue.800)",
-              }}
-            >
-              Update Duration
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+                </Box>
+                <Box>
+                  <Text fontWeight="semibold" mb={1} color="white" letterSpacing="wide">
+                    Add Note (Optional)
+                  </Text>
+                  <Textarea
+                    value={pastDateNote}
+                    onChange={(e) => setPastDateNote(e.target.value)}
+                    placeholder="How was your cold shower experience on this day?"
+                    rows={3}
+                    bg="whiteAlpha.200"
+                    color="white"
+                    borderColor="whiteAlpha.300"
+                    borderRadius="xl"
+                    _hover={{ borderColor: "whiteAlpha.400" }}
+                    _focus={{ 
+                      borderColor: "whiteAlpha.500",
+                      boxShadow: "0 0 0 1px rgba(255, 255, 255, 0.5)"
+                    }}
+                    _placeholder={{ color: "whiteAlpha.600" }}
+                    fontSize={{ base: "md", md: "sm" }}
+                    resize="vertical"
+                  />
+                </Box>
+              </VStack>
+            </ModalBody>
+            <ModalFooter bg="whiteAlpha.100" borderBottomRadius="xl" gap={2}>
+              <Button variant="ghost" onClick={onPastDateClose} color="white" _hover={{ bg: "whiteAlpha.200" }}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleLogPastDate}
+                bgGradient="linear(to-r, blue.400, blue.600)"
+                color="white"
+                isDisabled={!selectedPastDate}
+                _hover={{
+                  bgGradient: "linear(to-r, blue.500, blue.700)",
+                }}
+                _active={{
+                  bgGradient: "linear(to-r, blue.600, blue.800)",
+                }}
+              >
+                Log Date
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
 
-      <ChatAssistant
-        streak={currentStreak}
-        completedDays={completedDays}
-        totalDays={challengeData.days}
-        userName={userName}
-        notes={challengeData.notes}
-      />
+        <Modal isOpen={showDurationModal && !isAnimating} onClose={() => setShowDurationModal(false)}>
+          <ModalOverlay backdropFilter="blur(8px)" bg="blackAlpha.600" />
+          <ModalContent bg="blue.900" borderRadius="xl" mx={3}>
+            <ModalHeader bgGradient="linear(to-r, blue.400, blue.600)" color="white" borderTopRadius="xl">
+              Change Challenge Duration
+            </ModalHeader>
+            <ModalCloseButton color="white" />
+            <ModalBody p={5}>
+              <VStack spacing={3} align="stretch">
+                <Box>
+                  <Text fontWeight="semibold" mb={1} color="white" letterSpacing="wide">
+                    Number of Days
+                  </Text>
+                  <NumberInput
+                    value={newDuration}
+                    onChange={(_, value) => setNewDuration(value || 0)}
+                    min={Math.max(10, completedDays)}
+                    max={365}
+                    bg="whiteAlpha.200"
+                    borderRadius="xl"
+                  >
+                    <NumberInputField
+                      color="white"
+                      borderColor="whiteAlpha.300"
+                      _hover={{ borderColor: "whiteAlpha.400" }}
+                      _focus={{ 
+                        borderColor: "blue.400",
+                        boxShadow: "0 0 0 1px rgba(66, 153, 225, 0.6)"
+                      }}
+                    />
+                    <NumberInputStepper>
+                      <NumberIncrementStepper color="white" borderColor="whiteAlpha.300" />
+                      <NumberDecrementStepper color="white" borderColor="whiteAlpha.300" />
+                    </NumberInputStepper>
+                  </NumberInput>
+                  <Text fontSize="xs" color="whiteAlpha.700" mt={1}>
+                    Minimum duration is 10 days
+                  </Text>
+                </Box>
+              </VStack>
+            </ModalBody>
+            <ModalFooter bg="whiteAlpha.100" borderBottomRadius="xl" gap={2}>
+              <Button variant="ghost" onClick={() => setShowDurationModal(false)} color="white" _hover={{ bg: "whiteAlpha.200" }}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleDurationChange}
+                bgGradient="linear(to-r, blue.400, blue.600)"
+                color="white"
+                _hover={{
+                  bgGradient: "linear(to-r, blue.500, blue.700)",
+                }}
+                _active={{
+                  bgGradient: "linear(to-r, blue.600, blue.800)",
+                }}
+              >
+                Update Duration
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        <ChatAssistant
+          streak={currentStreak}
+          completedDays={completedDays}
+          totalDays={challengeData.days}
+          userName={userName}
+          notes={challengeData.notes}
+        />
+      </Box>
     </Box>
   )
 }

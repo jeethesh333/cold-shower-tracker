@@ -21,7 +21,7 @@ import {
 } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
 import { FaRobot, FaPaperPlane } from 'react-icons/fa';
-import { COHERE_API_KEY, isValidApiKey } from '../config';
+import { generateChatResponse } from '../services/geminiService';
 import { SessionNote } from '../types';
 
 interface Message {
@@ -76,57 +76,8 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({
     localStorage.setItem('chatMessages', JSON.stringify(messages));
   }, [messages]);
 
-  const generatePrompt = (userMessage: string): string => {
-    const progress = (completedDays / totalDays) * 100;
-    const daysLeft = totalDays - completedDays;
-    
-    const sortedNotes = Object.entries(notes)
-      .map(([date, noteData]) => ({ date, note: noteData.note }))
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
-    const notesContext = sortedNotes.length > 0
-      ? `\nRecent experiences:\n${sortedNotes.slice(0, 3).map(note => `${note.date}: ${note.note}`).join('\n')}`
-      : '\nNo previous sessions recorded yet.';
-
-    return `CORE INSTRUCTIONS:
-You are a supportive cold shower challenge assistant. Your responses must be:
-- Personal and direct
-- Encouraging and motivational
-- Focused on the individual's journey
-${userName ? `- Occasionally addressing them as "${userName}"` : '- STRICTLY avoiding any use of "User" or generic titles\n- Using only "you" and "your" for direct address'}
-
-CONTEXT:
-Progress: ${progress.toFixed(1)}% (Day ${completedDays} of ${totalDays})
-${streak > 0 ? `Active streak: ${streak} days` : 'Streak not yet started'}
-${daysLeft > 0 ? `Remaining: ${daysLeft} days` : 'Challenge completed!'}
-${notesContext}
-
-RESPONSE GUIDELINES:
-1. Keep responses concise and focused
-2. Celebrate progress and effort
-3. Provide practical cold shower tips when relevant
-4. Reference past experiences when applicable
-5. Maintain an encouraging tone
-
-${userName ? '' : 'CRITICAL: Never use the word "User" or any generic titles. Address them directly with "you" and "your".'}
-
-Current message: ${userMessage}`;
-  };
-
   const sendMessage = async () => {
     if (!input.trim()) return;
-    
-    if (!isValidApiKey(COHERE_API_KEY)) {
-      toast({
-        title: 'API Key Error',
-        description: 'Invalid or missing Cohere API key. Please check your .env file.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-        position: 'top',
-      });
-      return;
-    }
     
     const userMessage: Message = {
       role: 'user',
@@ -139,47 +90,23 @@ Current message: ${userMessage}`;
     setIsLoading(true);
     
     try {
-      const prompt = generatePrompt(input);
-      
-      const response = await fetch('https://api.cohere.ai/v1/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${COHERE_API_KEY}`,
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'command',
-          prompt: prompt,
-          max_tokens: 300,
-          temperature: 0.7,
-          k: 0,
-          stop_sequences: [],
-          return_likelihoods: 'NONE',
-        }),
+      const sortedNotes = Object.entries(notes)
+        .map(([date, noteData]) => ({ date, note: noteData.note }))
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 3);
+
+      const response = await generateChatResponse(input, {
+        progress: (completedDays / totalDays) * 100,
+        completedDays,
+        totalDays,
+        streak,
+        userName,
+        recentNotes: sortedNotes,
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `API Error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (!data.generations || !data.generations[0]) {
-        throw new Error('Invalid response format from API');
-      }
-      
-      let aiResponse = data.generations[0].text.trim();
-      
-      // Filter out any responses containing "User" when no username is provided
-      if (!userName && aiResponse.includes('User')) {
-        aiResponse = aiResponse.replace(/\b[Uu]ser\b/g, 'you');
-      }
       
       const assistantMessage: Message = {
         role: 'assistant',
-        content: aiResponse,
+        content: response,
         timestamp: new Date(),
       };
       

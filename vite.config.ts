@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // Validate environment variables
 const validateEnv = () => {
-  const required = ['VITE_COHERE_API_KEY'];
+  const required = ['VITE_GEMINI_API_KEY'];
   const missing = required.filter((key) => !process.env[key]);
   
   if (missing.length > 0) {

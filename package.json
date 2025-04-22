@@ -19,6 +19,7 @@
     "@chakra-ui/theme-tools": "^2.2.6",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@google/generative-ai": "^0.24.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/react-router-dom": "^5.3.3",
     "canvas-confetti": "^1.9.3",

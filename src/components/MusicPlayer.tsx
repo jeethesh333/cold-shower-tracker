@@ -1,4 +1,4 @@
-import { Box, IconButton, Menu, MenuButton, MenuList, MenuItem, HStack, Text, Progress, Spinner, Flex } from '@chakra-ui/react'
+import { Box, IconButton, Menu, MenuButton, MenuList, MenuItem, HStack, Text, Progress, Spinner, Flex, useBoolean } from '@chakra-ui/react'
 import { FaMusic, FaPlay, FaPause } from 'react-icons/fa'
 import { useState, useRef, useEffect, useCallback } from 'react'
 
@@ -42,10 +42,10 @@ const MusicPlayer = () => {
   const [progress, setProgress] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState<number>(0)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useBoolean()
   const [previewTime, setPreviewTime] = useState<number | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState<number>(0)
-  const [isHovering, setIsHovering] = useState(false)
+  const [hoveredTrack, setHoveredTrack] = useState<string | null>(null)
   const [lastPlayedPositions, setLastPlayedPositions] = useState<LastPlayedPosition>({})
   const [trackDurations, setTrackDurations] = useState<Record<string, number>>({})
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -150,28 +150,6 @@ const MusicPlayer = () => {
     }
   }, [playingTrack, playNextTrack]);
 
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>, trackPath: string) => {
-    if (!progressBarRef.current) return
-
-    const rect = progressBarRef.current.getBoundingClientRect()
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-    const x = clientX - rect.left
-    const percentage = (x / rect.width) * 100
-    const trackDuration = trackDurations[trackPath] || 0
-    const newTime = (percentage / 100) * trackDuration
-
-    setCurrentTime(newTime)
-    setProgress(percentage)
-    setLastPlayedPositions(prev => ({
-      ...prev,
-      [trackPath]: newTime
-    }))
-
-    if (audioRef.current && playingTrack === trackPath) {
-      audioRef.current.currentTime = newTime
-    }
-  }
-
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>, trackPath: string) => {
     if (!progressBarRef.current) return
 
@@ -183,15 +161,6 @@ const MusicPlayer = () => {
 
     setPreviewTime(time)
     setTooltipPosition(Math.min(Math.max(x, 0), rect.width))
-  }
-
-  const handleTouchStart = () => {
-    setIsHovering(true)
-  }
-
-  const handleTouchEnd = () => {
-    setIsHovering(false)
-    setPreviewTime(null)
   }
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, trackPath: string) => {
@@ -207,12 +176,12 @@ const MusicPlayer = () => {
     setTooltipPosition(Math.min(Math.max(x, 0), rect.width))
   }
 
-  const handleMouseEnter = () => {
-    setIsHovering(true)
+  const handleMouseEnter = (trackPath: string) => {
+    setHoveredTrack(trackPath)
   }
 
   const handleMouseLeave = () => {
-    setIsHovering(false)
+    setHoveredTrack(null)
     setPreviewTime(null)
   }
 
@@ -288,243 +257,161 @@ const MusicPlayer = () => {
     }
   }
 
-  const handleMenuItemClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleSeekClick = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>, trackPath: string) => {
+    e.stopPropagation();
+    if (!progressBarRef.current) return
+
+    const rect = progressBarRef.current.getBoundingClientRect()
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const x = clientX - rect.left
+    const percentage = (x / rect.width) * 100
+    const trackDuration = trackDurations[trackPath] || 0
+    const newTime = (percentage / 100) * trackDuration
+
+    setCurrentTime(newTime)
+    setProgress(percentage)
+    setLastPlayedPositions(prev => ({
+      ...prev,
+      [trackPath]: newTime
+    }))
+
+    if (audioRef.current && playingTrack === trackPath) {
+      audioRef.current.currentTime = newTime
+    }
+  }
+
+  const handleProgressBarClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
   }
 
   return (
-    <Box position="fixed" top={4} left={4} zIndex={1000}>
-      <Menu
-        isOpen={isMenuOpen}
-        onOpen={() => setIsMenuOpen(true)}
-        onClose={() => setIsMenuOpen(false)}
-        closeOnSelect={false}
+    <Box position="relative">
+      <Menu 
+        isOpen={isMenuOpen} 
+        onOpen={setIsMenuOpen.on} 
+        onClose={setIsMenuOpen.off} 
+        closeOnSelect={false} 
+        placement="bottom-start"
+        offset={[0, 4]}
+        gutter={1}
       >
         <MenuButton
           as={IconButton}
-          aria-label="Music menu"
-          icon={<FaMusic style={{ color: '#3182ce' }} />}
-          size="lg"
-          borderRadius="full"
-          bg="transparent"
-          position="relative"
+          aria-label="Music Player"
+          icon={<FaMusic />}
+          variant="ghost"
+          color="white"
+          position="fixed"
+          top={4}
+          left={4}
+          bg="whiteAlpha.200"
+          backdropFilter="blur(8px)"
+          boxShadow="lg"
+          _hover={{ bg: "whiteAlpha.300", transform: "scale(1.05)" }}
           transition="all 0.2s"
-          _hover={{
-            transform: 'scale(1.1)',
-            '& svg': {
-              color: 'white',
-            },
-            '&:before': {
-              opacity: 0.8,
-              background: 'linear-gradient(135deg, #63B3ED 0%, #3182CE 50%)',
-            },
-            '&:after': {
-              opacity: 0.8,
-              background: 'linear-gradient(135deg, #63B3ED 0%, #3182CE 50%)',
-              filter: 'blur(4px)',
-            }
-          }}
-          _active={{
-            transform: 'scale(0.95)',
-            '& svg': {
-              color: 'white',
-            },
-          }}
-          sx={{
-            '& svg': {
-              transition: 'color 0.2s',
-            },
-            '&:before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              borderRadius: 'full',
-              padding: '2px',
-              background: 'linear-gradient(135deg, #3182ce 0%, #2c5282 50%)',
-              opacity: 0.6,
-              transition: 'all 0.2s',
-              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-              WebkitMaskComposite: 'xor',
-              maskComposite: 'exclude',
-            },
-            '&:after': {
-              content: '""',
-              position: 'absolute',
-              inset: 0,
-              borderRadius: 'full',
-              background: 'linear-gradient(135deg, #3182ce 0%, #2c5282 50%)',
-              opacity: 0.6,
-              transition: 'all 0.2s',
-              zIndex: -1,
-              filter: 'blur(2px)',
-            }
-          }}
-          _focusVisible={{
-            boxShadow: 'none',
-          }}
+          zIndex={999}
         />
         <MenuList 
-          bg="blue.600"
-          borderRadius="xl" 
-          boxShadow="dark-lg"
-          p={2} 
-          minW="280px"
-          onClick={handleMenuItemClick}
-          border="none"
-          backdropFilter="blur(10px)"
-          sx={{
-            background: 'linear-gradient(135deg, #3182ce 0%, #2c5282 50%)',
-            '&:before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              bottom: 0,
-              left: 0,
-              borderRadius: 'xl',
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.05) 100%)',
-              pointerEvents: 'none'
-            }
-          }}
+          bg="blue.600" 
+          borderColor="whiteAlpha.200" 
+          minW="300px"
+          mt="2"
+          zIndex={1000}
+          boxShadow="xl"
         >
           {audioTracks.map((track) => (
-            <MenuItem
-              key={track.path}
-              borderRadius="lg"
-              p={2}
-              mb={2}
-              _hover={{ 
-                bg: 'whiteAlpha.200',
-                transform: 'translateY(-1px)',
-                transition: 'all 0.2s'
-              }}
-              _active={{
-                bg: 'whiteAlpha.300'
-              }}
-              _focus={{
-                bg: 'whiteAlpha.200'
-              }}
-              onClick={(e) => {
-                e.stopPropagation()
-              }}
-              sx={{
-                background: selectedTrack === track.path ? 'whiteAlpha.200' : 'transparent'
-              }}
+            <MenuItem 
+              key={track.path} 
+              as={Box}
+              bg="transparent" 
+              _hover={{ bg: "whiteAlpha.100" }} 
+              p={3}
+              onClick={(e) => e.preventDefault()}
+              closeOnSelect={false}
+              _focus={{ boxShadow: "none" }}
             >
-              <Box width="100%">
-                <HStack justify="space-between" width="100%" spacing={4} mb={selectedTrack === track.path ? 2 : 0}>
-                  <Text 
-                    fontWeight="medium" 
-                    color="white"
-                    fontSize="sm"
-                  >
-                    {track.name}
-                  </Text>
+              <Flex width="100%" direction="column">
+                <HStack width="100%" justify="space-between" mb={2}>
                   <IconButton
                     aria-label={playingTrack === track.path ? 'Pause' : 'Play'}
                     icon={isLoading === track.path ? <Spinner size="sm" /> : playingTrack === track.path ? <FaPause /> : <FaPlay />}
                     size="sm"
-                    colorScheme={selectedTrack === track.path ? 'whiteAlpha' : 'blackAlpha'}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handlePlayPause(track)
+                    onClick={(e) => { 
+                      e.stopPropagation();
+                      handlePlayPause(track); 
                     }}
-                    borderRadius="full"
+                    variant="ghost"
+                    color="white"
+                    mr={2}
                     isDisabled={isLoading !== null && isLoading !== track.path}
-                    bg={selectedTrack === track.path ? 'whiteAlpha.400' : 'whiteAlpha.200'}
-                    _hover={{
-                      bg: 'whiteAlpha.500'
-                    }}
                   />
+                  <Text 
+                    color="white" 
+                    fontSize="sm" 
+                    flex={1} 
+                    noOfLines={1} 
+                    title={track.name}
+                  >
+                    {track.name}
+                  </Text>
+                  <Text color="whiteAlpha.600" fontSize="xs">
+                    {playingTrack === track.path || selectedTrack === track.path 
+                      ? `${formatTime(currentTime)} / ${formatTime(trackDurations[track.path] || 0)}`
+                      : formatTime(trackDurations[track.path] || 0)
+                    }
+                  </Text>
                 </HStack>
-                {selectedTrack === track.path && (
-                  <Box>
+                <Box 
+                  ref={progressBarRef} 
+                  width="100%" 
+                  height="10px" 
+                  bg="whiteAlpha.200" 
+                  borderRadius="full" 
+                  cursor="pointer" 
+                  position="relative"
+                  onClick={handleProgressBarClick}
+                  onMouseDown={(e) => {e.stopPropagation(); handleSeekClick(e, track.path);}}
+                  onMouseEnter={() => handleMouseEnter(track.path)}
+                  onMouseLeave={handleMouseLeave}
+                  onMouseMove={(e) => handleMouseMove(e, track.path)}
+                  onTouchStart={() => setHoveredTrack(track.path)}
+                  onTouchMove={(e) => handleTouchMove(e, track.path)}
+                  onTouchEnd={(e) => { 
+                    e.stopPropagation();
+                    setHoveredTrack(null); 
+                    setPreviewTime(null);
+                    handleSeekClick(e, track.path);
+                  }}
+                >
+                  {(playingTrack === track.path || hoveredTrack === track.path) && (
+                    <Progress 
+                      value={playingTrack === track.path ? progress : (lastPlayedPositions[track.path] / (trackDurations[track.path] || 1)) * 100}
+                      height="10px" 
+                      colorScheme="blue" 
+                      bg="transparent"
+                      borderRadius="full"
+                      pointerEvents="none"
+                    />
+                  )}
+                  {hoveredTrack === track.path && previewTime !== null && (
                     <Box
-                      position="relative"
-                      mb={1}
+                      position="absolute"
+                      left={`${tooltipPosition}px`}
+                      bottom="15px"
+                      transform="translateX(-50%)"
+                      bg="blackAlpha.700"
+                      color="white"
+                      px={2}
+                      py={1}
+                      borderRadius="md"
+                      fontSize="xs"
+                      whiteSpace="nowrap"
                     >
-                      <Box
-                        ref={progressBarRef}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleSeek(e, track.path)
-                        }}
-                        onTouchStart={(e) => {
-                          e.stopPropagation()
-                          handleTouchStart()
-                        }}
-                        onTouchMove={(e) => {
-                          e.stopPropagation()
-                          handleTouchMove(e, track.path)
-                        }}
-                        onTouchEnd={(e) => {
-                          e.stopPropagation()
-                          handleSeek(e, track.path)
-                          handleTouchEnd()
-                        }}
-                        onMouseMove={(e) => handleMouseMove(e, track.path)}
-                        onMouseEnter={handleMouseEnter}
-                        onMouseLeave={handleMouseLeave}
-                        cursor="pointer"
-                        position="relative"
-                        role="group"
-                        h="16px"
-                        display="flex"
-                        alignItems="center"
-                      >
-                        <Progress
-                          value={selectedTrack === track.path ? progress : 0}
-                          size="xs"
-                          colorScheme="whiteAlpha"
-                          borderRadius="full"
-                          isAnimated
-                          transition="all 0.1s"
-                          _groupHover={{ transform: 'scaleY(1.5)' }}
-                          width="100%"
-                          bg="whiteAlpha.200"
-                        />
-                        {isHovering && previewTime !== null && (
-                          <Box
-                            position="absolute"
-                            top="-25px"
-                            left={`${tooltipPosition}px`}
-                            transform="translateX(-50%)"
-                            bg="white"
-                            color="blue.600"
-                            fontSize="xs"
-                            px={2}
-                            py={1}
-                            borderRadius="md"
-                            pointerEvents="none"
-                            fontWeight="medium"
-                          >
-                            {formatTime(previewTime)}
-                            <Box
-                              position="absolute"
-                              bottom="-4px"
-                              left="50%"
-                              transform="translateX(-50%)"
-                              width="0"
-                              height="0"
-                              borderLeft="4px solid transparent"
-                              borderRight="4px solid transparent"
-                              borderTop="4px solid"
-                              borderTopColor="white"
-                            />
-                          </Box>
-                        )}
-                      </Box>
+                      {formatTime(previewTime)}
                     </Box>
-                    <Flex justify="space-between" fontSize="xs" color="whiteAlpha.800" px={1}>
-                      <Text>{formatTime(currentTime)}</Text>
-                      <Text>{formatTime(trackDurations[track.path] || 0)}</Text>
-                    </Flex>
-                  </Box>
-                )}
-              </Box>
+                  )}
+                </Box>
+              </Flex>
             </MenuItem>
           ))}
         </MenuList>

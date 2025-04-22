@@ -29,7 +29,7 @@ npm install
 ```bash
 cp .env.example .env
 ```
-Then edit `.env` and add your Cohere API key. You can get one at [Cohere's website](https://cohere.ai/).
+Then edit `.env` and add your Gemini API key. You can get one at [Google AI Studio](https://makersuite.google.com/).
 
 4. Start the development server:
 ```bash
@@ -40,7 +40,7 @@ npm run dev
 
 The following environment variables are required:
 
-- `VITE_COHERE_API_KEY`: Your Cohere API key for the chat assistant functionality
+- `VITE_GEMINI_API_KEY`: Your Gemini API key for the chat assistant functionality
 
 ## Deployment
 
@@ -55,7 +55,7 @@ This project is configured for deployment on Vercel. Make sure to:
 - TypeScript
 - Vite
 - Chakra UI
-- Cohere AI
+- Google Gemini AI
 - Vercel
 
 ## License
