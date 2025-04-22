@@ -49,7 +49,6 @@ import ChatAssistant from './ChatAssistant'
 import MilestoneDisplay from './MilestoneDisplay'
 import { ChallengeData } from '../types'
 
-// Lazy load react-confetti for better performance
 const ReactConfetti = lazy(() => import('react-confetti'))
 
 interface ChallengeTrackerProps {
