@@ -40,7 +40,7 @@ import {
 import { Global as EmotionGlobal } from '@emotion/react'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { differenceInDays, format, isAfter, isBefore, parseISO } from 'date-fns'
-import { DeleteIcon, EditIcon, CalendarIcon, SettingsIcon, CloseIcon } from '@chakra-ui/icons'
+import { DeleteIcon, EditIcon, CalendarIcon, SettingsIcon, CloseIcon, RepeatIcon } from '@chakra-ui/icons'
 import ChallengeGrid from './ChallengeGrid'
 import confetti from "canvas-confetti"
 import SnowfallEffect from './SnowfallEffect'
@@ -154,6 +154,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
     startDate: null,
     endDate: null,
   });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Get today's date in YYYY-MM-DD format
   const today = new Date();
@@ -675,6 +676,20 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
   );
 
   const levelInfo = getLevelInfo(progress)
+
+  const handleForceUpdate = () => {
+    setIsUpdating(true);
+    // Clear cache
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach(name => {
+          caches.delete(name);
+        });
+      });
+    }
+    // Force reload
+    window.location.reload();
+  };
 
   return (
     <Box position="relative">
@@ -1385,7 +1400,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                 >
                   <VStack align="stretch" spacing={4}>
                     <Text fontWeight="semibold" fontSize="md" letterSpacing="wide">
-                      ✍️ SessionNotes
+                      ✍️ Session Notes
                     </Text>
                     <Box
                       bg="whiteAlpha.200"
@@ -1949,6 +1964,36 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
           userName={userName}
           notes={challengeData.notes}
         />
+
+        <Tooltip 
+          label="Force update app" 
+          placement="right"
+          hasArrow
+        >
+          <IconButton
+            aria-label="Force Update"
+            icon={<RepeatIcon />}
+            position="fixed"
+            bottom={4}
+            left={4}
+            onClick={handleForceUpdate}
+            isLoading={isUpdating}
+            bgGradient="linear(to-r, blue.400, blue.600)"
+            color="white"
+            _hover={{
+              bgGradient: "linear(to-r, blue.500, blue.700)",
+              transform: "scale(1.05)"
+            }}
+            _active={{
+              bgGradient: "linear(to-r, blue.600, blue.800)",
+              transform: "scale(0.95)"
+            }}
+            boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
+            size="md"
+            borderRadius="full"
+            zIndex={1000}
+          />
+        </Tooltip>
       </Box>
     </Box>
   )
