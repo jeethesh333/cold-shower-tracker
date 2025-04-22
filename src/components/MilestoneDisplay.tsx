@@ -21,8 +21,7 @@ const pulseAnimation = keyframes`
 `;
 
 const MilestoneDisplay: React.FC<MilestoneDisplayProps> = ({ currentProgress }) => {
-  const isMobile = useBreakpointValue({ base: true, md: false });
-  const displayMode = useBreakpointValue({ base: 'vertical', md: 'horizontal' });
+  const direction = useBreakpointValue({ base: "column", md: "row" }) as "column" | "row";
 
   const getMilestoneStatus = (milestone: Milestone) => {
     if (currentProgress >= milestone.requiredProgress) {
@@ -37,7 +36,7 @@ const MilestoneDisplay: React.FC<MilestoneDisplayProps> = ({ currentProgress }) 
     return 'locked';
   };
 
-  const Container = displayMode === 'vertical' ? VStack : HStack;
+  const Container = direction === 'column' ? VStack : HStack;
 
   return (
     <Box
@@ -63,7 +62,7 @@ const MilestoneDisplay: React.FC<MilestoneDisplayProps> = ({ currentProgress }) 
         align="center"
         justify="center"
         width="100%"
-        overflowX={displayMode === 'horizontal' ? 'auto' : 'visible'}
+        overflowX={direction === 'row' ? 'auto' : 'visible'}
         overflowY="hidden"
         sx={{
           '&::-webkit-scrollbar': {
@@ -92,24 +91,24 @@ const MilestoneDisplay: React.FC<MilestoneDisplayProps> = ({ currentProgress }) 
           return (
             <Flex
               key={milestone.id}
-              direction={displayMode === 'vertical' ? 'row' : 'column'}
+              direction={direction}
               align="center"
               justify="center"
               bg={isAchieved ? milestone.color : 'whiteAlpha.100'}
               color={isAchieved ? 'white' : 'whiteAlpha.600'}
               p={3}
               borderRadius="lg"
-              minW={displayMode === 'vertical' ? "200px" : "100px"}
+              minW={direction === 'column' ? "200px" : "100px"}
               position="relative"
               transition="all 0.2s"
               opacity={isAchieved ? 1 : 0.8}
               _hover={{ transform: 'translateY(-2px)' }}
               animation={isNext ? `${pulseAnimation} 2s infinite` : undefined}
             >
-              <Text fontSize="2xl" mb={displayMode === 'horizontal' ? 2 : 0} mr={displayMode === 'vertical' ? 3 : 0}>
+              <Text fontSize="2xl" mb={direction === 'row' ? 2 : 0} mr={direction === 'column' ? 3 : 0}>
                 {milestone.icon}
               </Text>
-              <VStack spacing={1} align={displayMode === 'vertical' ? "start" : "center"}>
+              <VStack spacing={1} align={direction === 'column' ? "start" : "center"}>
                 <Text
                   fontSize="sm"
                   fontWeight="semibold"
