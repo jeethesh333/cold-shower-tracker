@@ -1422,6 +1422,11 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                               borderColor: "blue.400",
                               boxShadow: "0 0 0 1px rgba(66,153,225,0.6)"
                             }}
+                            value={dateFilter.startDate || ''}
+                            onChange={(e) => setDateFilter(prev => ({
+                              ...prev,
+                              startDate: e.target.value
+                            }))}
                           />
                         </Box>
                         <Box flex="1">
@@ -1445,6 +1450,12 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                               borderColor: "blue.400",
                               boxShadow: "0 0 0 1px rgba(66,153,225,0.6)"
                             }}
+                            value={dateFilter.endDate || ''}
+                            onChange={(e) => setDateFilter(prev => ({
+                              ...prev,
+                              endDate: e.target.value
+                            }))}
+                            min={dateFilter.startDate || undefined}
                           />
                         </Box>
                         <IconButton
