@@ -1,3 +1,67 @@
+# Cold Shower Tracker
+
+A modern web application to track your cold shower challenge progress, with features like streak tracking, milestones, and an AI chat assistant for motivation and support.
+
+## Features
+
+- 🚿 Track daily cold shower sessions
+- 📊 Visual progress tracking
+- 🏆 Achievement milestones
+- 💬 AI-powered chat assistant
+- ❄️ Beautiful snowfall effects
+- 📱 Responsive design
+- 📝 Session notes and reflections
+
+## Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/your-username/cold-shower-tracker.git
+cd cold-shower-tracker
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+Then edit `.env` and add your Cohere API key. You can get one at [Cohere's website](https://cohere.ai/).
+
+4. Start the development server:
+```bash
+npm run dev
+```
+
+## Environment Variables
+
+The following environment variables are required:
+
+- `VITE_COHERE_API_KEY`: Your Cohere API key for the chat assistant functionality
+
+## Deployment
+
+This project is configured for deployment on Vercel. Make sure to:
+
+1. Set up the required environment variables in your Vercel project settings
+2. Connect your repository to Vercel for automatic deployments
+
+## Built With
+
+- React
+- TypeScript
+- Vite
+- Chakra UI
+- Cohere AI
+- Vercel
+
+## License
+
+MIT
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

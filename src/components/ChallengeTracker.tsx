@@ -47,6 +47,7 @@ import confetti from "canvas-confetti"
 import SnowfallEffect from './SnowfallEffect'
 import { FaSnowflake } from 'react-icons/fa'
 import ChatAssistant from './ChatAssistant'
+import MilestoneDisplay from './MilestoneDisplay'
 import { ChallengeData } from '../types'
 
 interface ChallengeTrackerProps {
@@ -318,6 +319,63 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
     }
 
     setIsAnimating(true);
+    const newStreak = currentStreak + 1;
+    
+    // Special streak-based celebrations
+    const celebrations = [];
+    
+    // Check all possible celebrations and collect them
+    if (progress === 100) {
+      celebrations.push({
+        title: "🎉 LEGENDARY ACHIEVEMENT! 🎉",
+        message: "You've completed the entire challenge! You're truly a master of cold showers!"
+      });
+    }
+    if (newStreak === 30) {
+      celebrations.push({
+        title: "❄️ FROST LEGEND! ❄️",
+        message: "A whole month of cold showers! Your dedication is truly legendary!"
+      });
+    }
+    if (newStreak === 14) {
+      celebrations.push({
+        title: "🧊 ICE MASTER! 🧊",
+        message: "Two weeks of mastery! Your resilience is remarkable!"
+      });
+    }
+    if (newStreak === 7) {
+      celebrations.push({
+        title: "⚔️ COLD WARRIOR! ⚔️",
+        message: "A full week of cold showers! Your warrior spirit is shining!"
+      });
+    }
+    if (newStreak === 3) {
+      celebrations.push({
+        title: "🌨️ FROST WALKER! 🌨️",
+        message: "Three days in a row! You're building incredible momentum!"
+      });
+    }
+    if (newStreak === 1) {
+      celebrations.push({
+        title: "💫 ICE BREAKER! 💫",
+        message: "First day conquered! Every journey begins with a single step!"
+      });
+    }
+    
+    // Show all celebrations with slight delays between them
+    celebrations.forEach((celebration, index) => {
+      setTimeout(() => {
+        toast({
+          title: celebration.title,
+          description: celebration.message,
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+          position: "top",
+        });
+      }, index * 300); // 300ms delay between each toast
+    });
+
     const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
     setCurrentQuote(randomQuote);
     setShowConfetti(true);
@@ -1175,6 +1233,8 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
               </Grid>
             </Box>
 
+            <MilestoneDisplay currentProgress={progress} />
+
             <ChallengeGrid 
               challengeData={challengeData}
               onEditNote={handleEditNote}
@@ -1364,7 +1424,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                 position="sticky"
                 top={0}
                 zIndex={2}
-                bg={{ base: "blue.500", lg: "whiteAlpha.100" }}
+                bg={{ base: "blue.600", lg: "whiteAlpha.100" }}
                 backdropFilter="blur(8px)"
                 borderTopRadius="xl"
                 borderBottom="1px solid"
