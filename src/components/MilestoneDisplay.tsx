@@ -64,6 +64,8 @@ const MilestoneDisplay: React.FC<MilestoneDisplayProps> = ({ currentProgress }) 
         width="100%"
         overflowX={direction === 'row' ? 'auto' : 'visible'}
         overflowY="hidden"
+        pb={0}
+        mb={0}
         sx={{
           '&::-webkit-scrollbar': {
             height: '6px',
@@ -80,7 +82,8 @@ const MilestoneDisplay: React.FC<MilestoneDisplayProps> = ({ currentProgress }) 
             },
           },
           scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1)'
+          scrollbarColor: 'rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1)',
+          borderBottom: 'none'
         }}
       >
         {MILESTONES.map((milestone) => {

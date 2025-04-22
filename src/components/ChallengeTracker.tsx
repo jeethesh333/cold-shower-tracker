@@ -161,6 +161,11 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
   today.setHours(0, 0, 0, 0);
   const todayStr = format(today, 'yyyy-MM-dd');
 
+  // Update scroll behavior
+  useEffect(() => {
+    window.scrollTo(0, 0); // Remove behavior option since it's handled by CSS
+  }, []); // Empty dependency array to only run once on mount
+
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({
@@ -221,7 +226,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
         startVelocity: 15,
         shapes: ['circle'],
         colors: ['#87CEEB', '#98FB98'],
-        zIndex: 100,
+        zIndex: 1100,
         drift: 1,
         angle: 270,
       });
@@ -239,7 +244,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
         ticks: 300,
         shapes: ['square'],
         colors: ['#FFD700', '#DDA0DD'],
-        zIndex: 110,
+        zIndex: 1110,
         drift: 0.2,
         angle: x < 0.5 ? 60 : 120,
       });
@@ -257,7 +262,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
         ticks: 200,
         shapes: ['star'],
         colors: ['#F0E68C', '#FF69B4'],
-        zIndex: 120,
+        zIndex: 1120,
         drift: 0,
         angle: x < 0.5 ? 45 : 135,
       });
@@ -349,6 +354,24 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
     setCurrentQuote(randomQuote);
     setShowConfetti(true);
     triggerConfetti();
+
+    // Scroll to top with multiple methods for cross-browser compatibility
+    const scrollOptions = {
+      top: 0,
+      behavior: 'smooth' as const
+    };
+
+    // Try different scrolling methods
+    if (document.scrollingElement) {
+      document.scrollingElement.scrollTo(scrollOptions);
+    }
+    if (document.documentElement) {
+      document.documentElement.scrollTo(scrollOptions);
+    }
+    if (document.body) {
+      document.body.scrollTo(scrollOptions);
+    }
+    window.scrollTo(scrollOptions);
 
     setTimeout(() => {
       setShowConfetti(false);
@@ -661,7 +684,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
           display="flex"
           alignItems="center"
           justifyContent="center"
-          zIndex={1000}
+          zIndex={1200}
           backdropFilter="blur(4px)"
           bg="rgba(0,0,0,0.2)"
           pointerEvents="none"
@@ -710,7 +733,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
         width="100vw"
         minHeight="100vh"
         bgGradient="linear(135deg, blue.900 0%, blue.700 50%, blue.600 100%)"
-        py={4}
+        py={0}
         display="flex"
         justifyContent="center"
         alignItems="flex-start"
@@ -723,6 +746,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
         margin="0"
         padding="0"
         sx={{
+          scrollBehavior: 'instant',
           '&::before': {
             content: '""',
             position: 'fixed',
@@ -1326,12 +1350,22 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                   position="sticky"
                   top={0}
                   zIndex={2}
-                  bg={{ base: "blue.600", lg: "whiteAlpha.100" }}
+                  bg="rgba(49, 130, 206, 0.97)"
                   backdropFilter="blur(8px)"
                   borderTopRadius="xl"
                   borderBottom="1px solid"
                   borderColor="whiteAlpha.200"
                   p={{ base: 3, md: 5 }}
+                  width="100%"
+                  sx={{
+                    '@supports (backdrop-filter: blur(8px))': {
+                      bg: 'rgba(49, 130, 206, 0.85)',
+                      backdropFilter: 'blur(8px)'
+                    },
+                    '@supports not (backdrop-filter: blur(8px))': {
+                      bg: 'rgba(49, 130, 206, 0.97)'
+                    }
+                  }}
                 >
                   <VStack align="stretch" spacing={4}>
                     <Text fontWeight="semibold" fontSize="md" letterSpacing="wide">

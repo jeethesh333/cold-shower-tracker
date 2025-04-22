@@ -28,6 +28,11 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
 
   const toast = useToast()
 
+  // Add scroll to top effect
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('showSnowfall', JSON.stringify(showSnowfall))
   }, [showSnowfall])
@@ -97,18 +102,17 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
     <>
       <Box
         width="100vw"
-        minHeight="100vh"
+        height="100vh"
         bgGradient="linear(135deg, blue.900 0%, blue.700 50%, blue.600 100%)"
         display="flex"
-        alignItems="center"
+        alignItems="flex-start"
         justifyContent="center"
-        position="absolute"
+        position="fixed"
         top="0"
         left="0"
         margin="0"
         padding="0"
-        overflowX="hidden"
-        overflowY="auto"
+        overflow="hidden"
         _before={{
           content: '""',
           position: "fixed",
@@ -171,8 +175,9 @@ const ChallengeSetup = ({ onStart }: ChallengeSetupProps) => {
           maxW={containerWidth} 
           p={0}
           display="flex"
-          alignItems="center"
+          alignItems="flex-start"
           justifyContent="center"
+          mt={{ base: "10vh", md: "15vh" }}
         >
           <Box
             w="100%"

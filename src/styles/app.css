@@ -1,8 +1,27 @@
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: instant;
+  height: 100%;
+}
+
 body {
   margin: 0;
   padding: 0;
   background-color: #F7FAFC;
   min-height: 100vh;
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
+  scroll-behavior: instant;
+}
+
+#root {
+  min-height: 100vh;
+  height: 100%;
 }
 
 .react-calendar {
@@ -63,4 +82,26 @@ body {
 
 .completed-day:hover {
   background-color: #3182CE !important;
+}
+
+input, textarea, select {
+  font-size: 16px !important;
+  transform-origin: top left;
+  transform: scale(1);
+}
+
+/* Prevent zoom on focus for iOS devices */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important;
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 0;
+  }
 } 

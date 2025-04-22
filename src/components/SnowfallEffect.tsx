@@ -33,7 +33,7 @@ const SnowfallEffect = ({ isEnabled, onToggle }: SnowfallEffectProps) => {
           position="fixed"
           top={4}
           right={4}
-          zIndex={1000}
+          zIndex={1100}
           onClick={onToggle}
           variant="ghost"
           color={isEnabled ? "blue.200" : "whiteAlpha.600"}
