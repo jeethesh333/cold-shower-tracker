@@ -643,9 +643,15 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
   const filteredNotes = sortedNotes.filter(noteData => {
     if (!dateFilter.startDate && !dateFilter.endDate) return true;
     
+    // Convert all dates to start of day for consistent comparison
     const noteDate = new Date(noteData.date);
+    noteDate.setHours(0, 0, 0, 0);
+    
     const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null;
+    if (startDate) startDate.setHours(0, 0, 0, 0);
+    
     const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null;
+    if (endDate) endDate.setHours(0, 0, 0, 0);
     
     if (startDate && endDate) {
       return noteDate >= startDate && noteDate <= endDate;
@@ -656,6 +662,25 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
     }
     return true;
   });
+
+  // Update the date inputs to handle timezone consistently
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const date = e.target.value;
+    setDateFilter(prev => ({
+      ...prev,
+      startDate: date,
+      // Reset end date if it's before new start date
+      endDate: prev.endDate && date && new Date(prev.endDate) < new Date(date) ? date : prev.endDate
+    }));
+  };
+
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const date = e.target.value;
+    setDateFilter(prev => ({
+      ...prev,
+      endDate: date
+    }));
+  };
 
   const levelInfo = getLevelInfo(progress)
 
@@ -1423,10 +1448,8 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                               boxShadow: "0 0 0 1px rgba(66,153,225,0.6)"
                             }}
                             value={dateFilter.startDate || ''}
-                            onChange={(e) => setDateFilter(prev => ({
-                              ...prev,
-                              startDate: e.target.value
-                            }))}
+                            onChange={handleStartDateChange}
+                            max={dateFilter.endDate || undefined}
                           />
                         </Box>
                         <Box flex="1">
@@ -1451,10 +1474,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                               boxShadow: "0 0 0 1px rgba(66,153,225,0.6)"
                             }}
                             value={dateFilter.endDate || ''}
-                            onChange={(e) => setDateFilter(prev => ({
-                              ...prev,
-                              endDate: e.target.value
-                            }))}
+                            onChange={handleEndDateChange}
                             min={dateFilter.startDate || undefined}
                           />
                         </Box>
