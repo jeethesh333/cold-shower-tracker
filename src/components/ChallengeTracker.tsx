@@ -49,6 +49,7 @@ import ChatAssistant from './ChatAssistant'
 import MilestoneDisplay from './MilestoneDisplay'
 import { ChallengeData } from '../types'
 
+// Only declare ReactConfetti once at the top level
 const ReactConfetti = lazy(() => import('react-confetti'))
 
 interface ChallengeTrackerProps {
@@ -708,6 +709,15 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
   const handleForceUpdate = async () => {
     setIsUpdating(true);
     try {
+      // Show update toast
+      toast({
+        title: "Updating application...",
+        description: "Please wait while we get the latest version.",
+        status: "info",
+        duration: 3000,
+        isClosable: true,
+      });
+
       // Clear all caches
       if ('caches' in window) {
         const cacheNames = await caches.keys();
@@ -735,12 +745,31 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
       if (userName) localStorage.setItem('userName', userName);
       if (showSnowfall) localStorage.setItem('showSnowfall', showSnowfall);
 
-      // Force reload the page
-      window.location.href = window.location.href;
+      // Show success toast
+      toast({
+        title: "Update ready!",
+        description: "Reloading to apply updates...",
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+
+      // Force reload after a short delay
+      setTimeout(() => {
+        window.location.href = window.location.href;
+      }, 2000);
     } catch (error) {
       console.error('Error during force update:', error);
+      toast({
+        title: "Update failed",
+        description: "Please try refreshing your browser manually.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsUpdating(false);
     }
-    setIsUpdating(false);
   };
 
   return (
@@ -2017,36 +2046,6 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
           notes={challengeData.notes}
         />
 
-        <Tooltip 
-          label="Force update app" 
-          placement="right"
-          hasArrow
-        >
-          <IconButton
-            aria-label="Force Update"
-            icon={<RepeatIcon />}
-            position="fixed"
-            bottom={4}
-            left={4}
-            onClick={handleForceUpdate}
-            isLoading={isUpdating}
-            bgGradient="linear(to-r, blue.400, blue.600)"
-            color="white"
-            _hover={{
-              bgGradient: "linear(to-r, blue.500, blue.700)",
-              transform: "scale(1.05)"
-            }}
-            _active={{
-              bgGradient: "linear(to-r, blue.600, blue.800)",
-              transform: "scale(0.95)"
-            }}
-            boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)"
-            size="md"
-            borderRadius="full"
-            zIndex={1000}
-          />
-        </Tooltip>
-
         {updateAvailable && (
           <Box
             position="fixed"
@@ -2059,19 +2058,35 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
             zIndex={9999}
             maxW="sm"
             backdropFilter="blur(8px)"
+            animation="pulse 2s infinite"
+            _before={{
+              content: '""',
+              position: "absolute",
+              top: -2,
+              right: -2,
+              bottom: -2,
+              left: -2,
+              background: "linear-gradient(45deg, blue.400, blue.600)",
+              borderRadius: "xl",
+              zIndex: -1,
+              animation: "pulse 2s infinite",
+              opacity: 0.6
+            }}
           >
             <VStack spacing={2} align="stretch">
               <Text color="white" fontWeight="medium">
-                New version available! 🚀
+                🚀 New version available!
               </Text>
               <Text color="whiteAlpha.800" fontSize="sm">
-                Refresh to get the latest updates.
+                Update now to get the latest features.
               </Text>
               <Button
-                onClick={() => window.location.reload()}
+                onClick={handleForceUpdate}
                 size="sm"
                 colorScheme="blue"
                 variant="solid"
+                isLoading={isUpdating}
+                loadingText="Updating..."
                 _hover={{
                   transform: "translateY(-1px)",
                   boxShadow: "lg"
