@@ -705,18 +705,42 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
 
   const levelInfo = getLevelInfo(progress)
 
-  const handleForceUpdate = () => {
+  const handleForceUpdate = async () => {
     setIsUpdating(true);
-    // Clear cache
-    if ('caches' in window) {
-      caches.keys().then((names) => {
-        names.forEach(name => {
-          caches.delete(name);
-        });
-      });
+    try {
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(
+          cacheNames.map(cacheName => caches.delete(cacheName))
+        );
+      }
+
+      // Unregister service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(
+          registrations.map(registration => registration.unregister())
+        );
+      }
+
+      // Clear local storage except for important data
+      const challengeData = localStorage.getItem('challengeData');
+      const userName = localStorage.getItem('userName');
+      const showSnowfall = localStorage.getItem('showSnowfall');
+      
+      localStorage.clear();
+      
+      if (challengeData) localStorage.setItem('challengeData', challengeData);
+      if (userName) localStorage.setItem('userName', userName);
+      if (showSnowfall) localStorage.setItem('showSnowfall', showSnowfall);
+
+      // Force reload the page
+      window.location.href = window.location.href;
+    } catch (error) {
+      console.error('Error during force update:', error);
     }
-    // Force reload
-    window.location.reload();
+    setIsUpdating(false);
   };
 
   return (
@@ -921,7 +945,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                 letterSpacing="wide"
                 textShadow="0 1px 2px rgba(0,0,0,0.1)"
               >
-                Let's do this{challengeData.userName && challengeData.userName !== 'User' ? `, ${challengeData.userName}` : ''}! 
+                Let's do this{challengeData.userName && challengeData.userName !== 'User' ? `, ${challengeData.userName}` : ''}! 💪
               </Text>
             </Box>
           </VStack>
