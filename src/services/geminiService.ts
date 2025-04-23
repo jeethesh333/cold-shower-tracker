@@ -25,7 +25,8 @@ const FALLBACK_RESPONSES = [
   "You're making great progress! Cold showers are helping build your mental toughness.",
   "Remember why you started this challenge. Your future self will thank you!",
   "Stay consistent with your cold showers - the benefits compound over time.",
-  "The discomfort you feel is where the growth happens. Keep pushing forward!"
+  "The discomfort you feel is where the growth happens. Keep pushing forward!",
+  "Every cold shower is a victory over comfort. Embrace the chill and grow stronger!"
 ];
 
 export const generateChatResponse = async (
