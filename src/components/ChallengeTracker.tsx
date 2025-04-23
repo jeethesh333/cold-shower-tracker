@@ -112,6 +112,7 @@ const getLevelInfo = (progress: number) => {
 
 const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTrackerProps) => {
   const [showConfetti, setShowConfetti] = useState(false)
+  const [confettiError, setConfettiError] = useState(false)
   const [showSnowfall, setShowSnowfall] = useState(() => {
     const saved = localStorage.getItem('showSnowfall')
     return saved !== null ? JSON.parse(saved) : true
@@ -276,101 +277,50 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
   }
 
   const triggerConfetti = () => {
-    // Background layer (slower, larger particles)
-    const backgroundLayer = () => {
-      confetti({
-        particleCount: 50,
-        spread: 100,
-        origin: { x: 0.5, y: 0.5 },
-        gravity: 0.3,
-        scalar: 2,
-        ticks: 400,
-        startVelocity: 15,
-        shapes: ['circle'],
-        colors: ['#87CEEB', '#98FB98'],
-        zIndex: 1100,
-        drift: 1,
-        angle: 270,
-      });
-    };
+    try {
+      // Only use canvas-confetti for better compatibility
+      const backgroundLayer = () => {
+        confetti({
+          particleCount: 30,
+          spread: 100,
+          origin: { x: 0.5, y: 0.5 },
+          gravity: 0.3,
+          scalar: 2,
+          ticks: 300,
+          startVelocity: 15,
+          shapes: ['circle'],
+          colors: ['#87CEEB', '#98FB98'],
+          zIndex: 1100,
+        });
+      };
 
-    // Middle layer (medium speed and size)
-    const middleLayer = (x: number, y: number) => {
-      confetti({
-        particleCount: 40,
-        spread: 70,
-        origin: { x, y },
-        gravity: 0.5,
-        scalar: 1.2,
-        startVelocity: 35,
-        ticks: 300,
-        shapes: ['square'],
-        colors: ['#FFD700', '#DDA0DD'],
-        zIndex: 1110,
-        drift: 0.2,
-        angle: x < 0.5 ? 60 : 120,
-      });
-    };
+      const sideLayer = (x: number) => {
+        confetti({
+          particleCount: 20,
+          spread: 70,
+          origin: { x, y: 0.5 },
+          gravity: 0.5,
+          scalar: 1.2,
+          startVelocity: 25,
+          ticks: 200,
+          colors: ['#FFD700', '#DDA0DD'],
+          zIndex: 1110,
+        });
+      };
 
-    // Foreground layer (fast, small particles)
-    const foregroundLayer = (x: number, y: number) => {
-      confetti({
-        particleCount: 30,
-        spread: 45,
-        origin: { x, y },
-        gravity: 0.7,
-        scalar: 0.8,
-        startVelocity: 45,
-        ticks: 200,
-        shapes: ['star'],
-        colors: ['#F0E68C', '#FF69B4'],
-        zIndex: 1120,
-        drift: 0,
-        angle: x < 0.5 ? 45 : 135,
-      });
-    };
+      // Simpler animation sequence
+      backgroundLayer();
+      sideLayer(0.2);
+      sideLayer(0.8);
+      
+      setTimeout(() => {
+        backgroundLayer();
+      }, 200);
 
-    // Initial burst from corners
-    const corners = [
-      { x: 0, y: 0 },   // Top left
-      { x: 1, y: 0 },   // Top right
-      { x: 0, y: 0.8 }, // Bottom left
-      { x: 1, y: 0.8 }, // Bottom right
-    ];
-
-    corners.forEach(({ x, y }) => {
-      middleLayer(x, y);
-      foregroundLayer(x, y);
-    });
-
-    // Center background effect
-    backgroundLayer();
-
-    // Continuous gentle animation
-    const end = Date.now() + 5000;
-    const gentleConfetti = () => {
-      const remaining = end - Date.now();
-      if (remaining < 0) return;
-
-      // Alternate between left and right sides
-      const side = Math.random() > 0.5;
-      confetti({
-        particleCount: 2,
-        angle: side ? 60 : 120,
-        spread: 80,
-        origin: { x: side ? 0 : 1, y: 0.7 },
-        gravity: 0.3,
-        scalar: 0.9,
-        drift: side ? 0.5 : -0.5,
-        ticks: 300,
-        shapes: ['circle', 'square'],
-        zIndex: 115,
-        colors: ['#FFD700', '#87CEEB', '#98FB98', '#DDA0DD', '#F0E68C'],
-      });
-
-      requestAnimationFrame(gentleConfetti);
-    };
-    gentleConfetti();
+    } catch (error) {
+      console.error('Confetti error:', error);
+      setConfettiError(true);
+    }
   };
 
   const handleLogSession = () => {
@@ -389,17 +339,17 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
 
     setIsAnimating(true);
     
-    // Only show celebration for 100% completion
-    const celebrations = [];
-    
-    // Check if challenge is completed
-    if (progress === 100) {
-      celebrations.push({
-        title: "🎉 LEGENDARY ACHIEVEMENT! 🎉",
-        message: "You've completed the entire challenge! You're truly a master of cold showers!"
-      });
+    // Only show celebration for 100% completion or if confetti hasn't errored
+    if (progress === 100 || !confettiError) {
+      const celebrations = [];
       
-      // Show celebration popup only for 100% completion
+      if (progress === 100) {
+        celebrations.push({
+          title: "🎉 LEGENDARY ACHIEVEMENT! 🎉",
+          message: "You've completed the entire challenge! You're truly a master of cold showers!"
+        });
+      }
+      
       celebrations.forEach((celebration) => {
         toast({
           title: celebration.title,
@@ -410,30 +360,25 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
           position: "top",
         });
       });
+
+      const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+      setCurrentQuote(randomQuote);
+      
+      if (!confettiError) {
+        setShowConfetti(true);
+        triggerConfetti();
+      }
     }
 
-    const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
-    setCurrentQuote(randomQuote);
-    setShowConfetti(true);
-    triggerConfetti();
-
-    // Scroll to top with multiple methods for cross-browser compatibility
-    const scrollOptions = {
-      top: 0,
-      behavior: 'smooth' as const
-    };
-
-    // Try different scrolling methods
-    if (document.scrollingElement) {
-      document.scrollingElement.scrollTo(scrollOptions);
+    // Scroll with fallback methods
+    try {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    } catch (e) {
+      window.scrollTo(0, 0);
     }
-    if (document.documentElement) {
-      document.documentElement.scrollTo(scrollOptions);
-    }
-    if (document.body) {
-      document.body.scrollTo(scrollOptions);
-    }
-    window.scrollTo(scrollOptions);
 
     setTimeout(() => {
       setShowConfetti(false);
@@ -807,14 +752,15 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
 
   return (
     <Box position="relative">
-      {showConfetti && (
+      {showConfetti && !confettiError && (
         <Suspense fallback={null}>
           <ReactConfetti
             width={windowSize.width}
             height={windowSize.height}
             recycle={false}
-            numberOfPieces={500}
+            numberOfPieces={200}
             gravity={0.15}
+            onConfettiComplete={() => setShowConfetti(false)}
           />
         </Suspense>
       )}
