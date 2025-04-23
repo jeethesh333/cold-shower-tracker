@@ -23,6 +23,9 @@ import { CloseIcon } from '@chakra-ui/icons';
 import { FaRobot, FaPaperPlane } from 'react-icons/fa';
 import { generateChatResponse } from '../services/geminiService';
 import { SessionNote } from '../types';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { parseISO, differenceInDays } from 'date-fns';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -36,6 +39,8 @@ interface ChatAssistantProps {
   totalDays: number;
   userName?: string;
   notes: Record<string, SessionNote>;
+  startDate: string;
+  daysLeft: number;
 }
 
 const ChatAssistant: React.FC<ChatAssistantProps> = ({
@@ -44,6 +49,8 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({
   totalDays,
   userName,
   notes = {},
+  startDate,
+  daysLeft,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -95,6 +102,13 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 3);
 
+      // Calculate current day number based on days since start
+      const startDateObj = parseISO(startDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const daysSinceStart = differenceInDays(today, startDateObj) + 1;
+      const currentDay = Math.min(daysSinceStart, totalDays);
+
       const response = await generateChatResponse(input, {
         progress: (completedDays / totalDays) * 100,
         completedDays,
@@ -102,6 +116,8 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({
         streak,
         userName,
         recentNotes: sortedNotes,
+        currentDay,
+        daysLeft
       });
       
       const assistantMessage: Message = {
@@ -371,7 +387,26 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({
                       borderRadius="lg"
                       boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"
                     >
-                      <Text>{message.content}</Text>
+                      <Box className="markdown-content" sx={{
+                        '& p': { margin: 0 },
+                        '& strong': { color: 'blue.200' },
+                        '& em': { color: 'blue.100' },
+                        '& code': { 
+                          bg: 'whiteAlpha.200',
+                          p: '2px 4px',
+                          borderRadius: 'md',
+                          fontSize: '0.9em'
+                        },
+                        '& a': {
+                          color: 'blue.200',
+                          textDecoration: 'underline',
+                          _hover: { color: 'blue.100' }
+                        }
+                      }}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {message.content}
+                        </ReactMarkdown>
+                      </Box>
                       <Text fontSize="xs" color="whiteAlpha.600" mt={1}>
                         {formatTime(new Date(message.timestamp))}
                       </Text>

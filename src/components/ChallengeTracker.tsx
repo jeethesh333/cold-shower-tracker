@@ -217,7 +217,39 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
 
   const completedDays = challengeData.completedDays.length
   const progress = (completedDays / challengeData.days) * 100
-  const daysLeft = challengeData.days - completedDays
+  
+  // Calculate days left from today to end date
+  const currentDate = new Date()
+  currentDate.setHours(0, 0, 0, 0)
+  const startDate = new Date(challengeData.startDate)
+  const endDate = new Date(startDate)
+  endDate.setDate(startDate.getDate() + challengeData.days - 1)
+  
+  // Get today's date string in YYYY-MM-DD format
+  const todayString = format(currentDate, 'yyyy-MM-dd')
+  const endDateString = format(endDate, 'yyyy-MM-dd')
+  
+  // Check if today has been logged
+  const isTodayLogged = challengeData.completedDays.includes(todayString)
+  
+  // Force direct string comparison to check if today is the end date
+  const isTodayEndDate = todayString === endDateString
+  
+  // Calculate days left - handle each case individually
+  let daysLeft = 0
+  
+  if (endDate < currentDate) {
+    // If end date is in the past, challenge is over
+    daysLeft = isTodayLogged ? 0 : 1  // Even if challenge is over, add 1 if today not logged
+  } else if (isTodayEndDate) {
+    // If today is exactly the end date
+    daysLeft = isTodayLogged ? 0 : 2  // Add extra day if today not logged
+  } else {
+    // Normal case: count days between today and end date (inclusive of end date)
+    const daysBetween = differenceInDays(endDate, currentDate)
+    daysLeft = isTodayLogged ? daysBetween + 1 : daysBetween + 2  // Add +1 when logged, +2 when not logged
+  }
+  
   const currentStreak = calculateStreak(challengeData.completedDays)
 
   function calculateStreak(dates: string[]): number {
@@ -2061,6 +2093,8 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
           totalDays={challengeData.days}
           userName={userName}
           notes={challengeData.notes}
+          startDate={challengeData.startDate}
+          daysLeft={daysLeft}  // Pass the calculated daysLeft value
         />
 
         {updateAvailable && (

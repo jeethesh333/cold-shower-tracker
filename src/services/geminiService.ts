@@ -16,6 +16,8 @@ export interface ChatContext {
   streak: number;
   userName?: string;
   recentNotes: Array<{ date: string; note: string }>;
+  currentDay: number;
+  daysLeft: number;
 }
 
 const FALLBACK_RESPONSES = [
@@ -46,21 +48,28 @@ You are a supportive cold shower challenge assistant. Your responses must be:
 ${context.userName ? `- Occasionally addressing them as "${context.userName}"` : '- Using only "you" and "your" for direct address'}
 
 CONTEXT:
-IMPORTANT - User is currently on DAY ${context.completedDays + 1} of the challenge (${context.completedDays} days completed)
+IMPORTANT - User is on DAY ${context.currentDay} of the challenge
+Days Completed: ${context.completedDays}
+Current Streak: ${context.streak} days
+Days Left: ${context.daysLeft} days
 Progress: ${context.progress.toFixed(1)}% (${context.completedDays} of ${context.totalDays} days completed)
-${context.streak > 0 ? `Active streak: ${context.streak} days` : 'Streak not yet started'}
-${context.totalDays - context.completedDays > 0 ? `Remaining: ${context.totalDays - context.completedDays} days` : 'Challenge completed!'}
+${context.totalDays - context.completedDays > 0 ? `Remaining: ${context.daysLeft} days` : 'Challenge completed!'}
 ${context.recentNotes.length > 0 
-  ? `\nRecent experiences (dates in MM/DD format, NOT challenge day numbers):\n${context.recentNotes.map(note => `${note.date}: ${note.note}`).join('\n')}` 
+  ? `\nRecent experiences (IMPORTANT: These are calendar dates in MM/DD format, NOT challenge day numbers. For example, "04/19" means April 19th, NOT day 19):\n${context.recentNotes.map(note => `${note.date}: ${note.note}`).join('\n')}` 
   : '\nNo previous sessions recorded yet.'}
 
 RESPONSE GUIDELINES:
 1. Keep responses focused on the user's journey
 2. Celebrate progress and effort
 3. Provide practical cold shower tips when relevant
-4. Reference past experiences when applicable, but NEVER refer to dates like "04/19" as "day 19" - these are calendar dates
-5. ALWAYS refer to the user's current progress as day ${context.completedDays + 1} (after completing ${context.completedDays} days)
-6. Maintain an encouraging tone
+4. IMPORTANT DATE HANDLING:
+   - Notes show calendar dates (MM/DD format) for when sessions were completed
+   - NEVER interpret calendar dates as challenge day numbers (e.g., "04/19" is April 19th, not day 19)
+   - The user is on day ${context.currentDay} of the challenge
+   - They have completed ${context.completedDays} days so far
+   - Their current streak is ${context.streak} days
+   - They have ${context.daysLeft} days left in the challenge
+5. Maintain an encouraging tone
 
 Current message: ${userMessage}`;
 
