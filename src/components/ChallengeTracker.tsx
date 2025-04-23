@@ -40,7 +40,7 @@ import {
 import { Global as EmotionGlobal } from '@emotion/react'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { differenceInDays, format, isAfter, isBefore, parseISO } from 'date-fns'
-import { DeleteIcon, EditIcon, CalendarIcon, SettingsIcon, CloseIcon, RepeatIcon } from '@chakra-ui/icons'
+import { DeleteIcon, EditIcon, CalendarIcon, SettingsIcon, CloseIcon } from '@chakra-ui/icons'
 import ChallengeGrid from './ChallengeGrid'
 import confetti from "canvas-confetti"
 import SnowfallEffect from './SnowfallEffect'
