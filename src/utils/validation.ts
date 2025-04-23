@@ -37,7 +37,7 @@ export function validateChallengeData(data: unknown): ValidationResult {
     const challengeData = data as any
 
     // Validate required fields
-    const requiredFields = ['days', 'startDate', 'userName', 'completedDays', 'notes', 'lastLoggedDate']
+    const requiredFields = ['days', 'startDate', 'userName', 'completedDays', 'notes']
     for (const field of requiredFields) {
       if (!(field in challengeData)) {
         errors.push(`Missing required field: ${field}`)
@@ -57,7 +57,7 @@ export function validateChallengeData(data: unknown): ValidationResult {
 
     if (typeof challengeData.userName !== 'string' || challengeData.userName.trim().length === 0) {
       errors.push('Invalid user name')
-      challengeData.userName = 'Anonymous'
+      challengeData.userName = 'User'
     }
 
     if (!Array.isArray(challengeData.completedDays)) {
@@ -70,14 +70,20 @@ export function validateChallengeData(data: unknown): ValidationResult {
       challengeData.notes = {}
     }
 
-    // Validate completed days format
+    // Validate completed days format and remove duplicates
+    const uniqueCompletedDays = new Set<string>();
     challengeData.completedDays = challengeData.completedDays.filter((day: string) => {
-      const isValid = isValidDateString(day)
+      const isValid = isValidDateString(day);
       if (!isValid) {
-        errors.push(`Invalid completed day format: ${day}`)
+        errors.push(`Invalid completed day format: ${day}`);
+        return false;
       }
-      return isValid
-    })
+      if (uniqueCompletedDays.has(day)) {
+        return false; // Remove duplicate
+      }
+      uniqueCompletedDays.add(day);
+      return true;
+    });
 
     // Validate notes format
     const validNotes: Record<string, SessionNote> = {}
@@ -103,43 +109,36 @@ export function validateChallengeData(data: unknown): ValidationResult {
               createdAt,
               updatedAt: noteObj.updatedAt || createdAt
             }
-          } else {
-            errors.push(`Invalid note format for date: ${date}`)
           }
-        } else {
-          errors.push(`Invalid note format for date: ${date}`)
         }
-      } else {
-        errors.push(`Invalid note date format: ${date}`)
       }
     })
     challengeData.notes = validNotes
-
-    // Validate lastLoggedDate
-    if (challengeData.lastLoggedDate !== null && 
-        (typeof challengeData.lastLoggedDate !== 'string' || !isValidDateString(challengeData.lastLoggedDate))) {
-      errors.push('Invalid last logged date')
-      challengeData.lastLoggedDate = null
-    }
 
     // Create sanitized data
     sanitizedData = {
       days: challengeData.days,
       startDate: challengeData.startDate,
       userName: challengeData.userName.trim(),
-      completedDays: challengeData.completedDays,
+      completedDays: Array.from(uniqueCompletedDays),
       notes: challengeData.notes,
-      lastLoggedDate: challengeData.lastLoggedDate
+      lastLoggedDate: challengeData.lastLoggedDate || null
     }
 
+    // Return validation result
     return {
       isValid: errors.length === 0,
       data: sanitizedData,
       errors
     }
   } catch (error) {
-    errors.push(`Unexpected error during validation: ${error instanceof Error ? error.message : String(error)}`)
-    return { isValid: false, data: null, errors }
+    console.error('Error validating challenge data:', error)
+    errors.push('Error validating challenge data')
+    return {
+      isValid: false,
+      data: null,
+      errors
+    }
   }
 }
 

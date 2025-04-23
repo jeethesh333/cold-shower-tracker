@@ -24,8 +24,8 @@ function App() {
         console.warn('Data validation warnings:', errors)
         toast({
           title: 'Data Recovery',
-          description: 'Some of your challenge data was corrupted and has been fixed.',
-          status: 'warning',
+          description: 'Some data needed to be fixed. Your progress is safe and has been restored.',
+          status: 'info',
           duration: 5000,
           isClosable: true,
         })

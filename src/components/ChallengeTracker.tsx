@@ -798,27 +798,44 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
           justifyContent="center"
           zIndex={1200}
           backdropFilter="blur(4px)"
-          bg="rgba(0,0,0,0.2)"
+          bg="rgba(0,0,0,0.3)"
           pointerEvents="none"
         >
-          <VStack spacing={6} p={6} maxW="90vw" textAlign="center">
+          <VStack 
+            spacing={6} 
+            p={6} 
+            maxW="90vw" 
+            textAlign="center"
+            bg="rgba(53, 127, 202, 0.4)"
+            borderRadius="xl"
+            backdropFilter="blur(8px)"
+          >
             <Text
-              fontSize={{ base: "4xl", md: "6xl", lg: "7xl" }}
+              fontSize={{ base: "2xl", md: "5xl", lg: "5xl" }}
               fontWeight="bold"
               color="white"
               textShadow="0 2px 10px rgba(0,0,0,0.5)"
               lineHeight="1.2"
               letterSpacing="wide"
+              sx={{
+                WebkitTextStroke: "1px rgba(255,255,255,0.1)",
+                textShadow: "0 2px 10px rgba(0,0,0,0.5), 0 0 5px rgba(255,255,255,0.2)"
+              }}
             >
               ✨ Great job! ✨
             </Text>
             <Text
-              fontSize={{ base: "lg", md: "2xl" }}
+              fontSize={{ base: "md", md: "2xl" }}
               fontWeight="medium"
               color="white"
               textShadow="0 1px 4px rgba(0,0,0,0.3)"
               fontStyle="italic"
               lineHeight="1.4"
+              px={4}
+              sx={{
+                WebkitTextStroke: "0.2px rgba(255,255,255,0.1)",
+                textShadow: "0 1px 4px rgba(0,0,0,0.3), 0 0 2px rgba(255,255,255,0.2)"
+              }}
             >
               "{currentQuote.text}"
             </Text>
