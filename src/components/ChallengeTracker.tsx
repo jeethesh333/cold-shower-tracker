@@ -155,6 +155,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
     endDate: null,
   });
   const [isUpdating, setIsUpdating] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
 
   // Get today's date in YYYY-MM-DD format
   const today = new Date();
@@ -185,6 +186,33 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
   useEffect(() => {
     localStorage.setItem('userName', userName);
   }, [userName]);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.addEventListener('controllerchange', () => {
+          // New service worker activated
+          setUpdateAvailable(true);
+        });
+      });
+
+      // Check for updates
+      navigator.serviceWorker.getRegistration().then(registration => {
+        if (registration) {
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  setUpdateAvailable(true);
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+  }, []);
 
   const completedDays = challengeData.completedDays.length
   const progress = (completedDays / challengeData.days) * 100
@@ -893,7 +921,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                 letterSpacing="wide"
                 textShadow="0 1px 2px rgba(0,0,0,0.1)"
               >
-                Let's do this{challengeData.userName && challengeData.userName !== 'User' ? `, ${challengeData.userName}` : ''}! 💪
+                Let's do this{challengeData.userName && challengeData.userName !== 'User' ? `, ${challengeData.userName}` : ''} 💪
               </Text>
             </Box>
           </VStack>
@@ -1994,6 +2022,42 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
             zIndex={1000}
           />
         </Tooltip>
+
+        {updateAvailable && (
+          <Box
+            position="fixed"
+            bottom={20}
+            right={4}
+            bg="blue.600"
+            p={4}
+            borderRadius="xl"
+            boxShadow="lg"
+            zIndex={9999}
+            maxW="sm"
+            backdropFilter="blur(8px)"
+          >
+            <VStack spacing={2} align="stretch">
+              <Text color="white" fontWeight="medium">
+                New version available! 🚀
+              </Text>
+              <Text color="whiteAlpha.800" fontSize="sm">
+                Refresh to get the latest updates.
+              </Text>
+              <Button
+                onClick={() => window.location.reload()}
+                size="sm"
+                colorScheme="blue"
+                variant="solid"
+                _hover={{
+                  transform: "translateY(-1px)",
+                  boxShadow: "lg"
+                }}
+              >
+                Update Now
+              </Button>
+            </VStack>
+          </Box>
+        )}
       </Box>
     </Box>
   )
