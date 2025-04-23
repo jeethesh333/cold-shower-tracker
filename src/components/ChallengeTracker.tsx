@@ -921,7 +921,7 @@ const ChallengeTracker = ({ challengeData, onUpdate, onReset }: ChallengeTracker
                 letterSpacing="wide"
                 textShadow="0 1px 2px rgba(0,0,0,0.1)"
               >
-                Let's do this{challengeData.userName && challengeData.userName !== 'User' ? `, ${challengeData.userName}` : ''} 💪
+                Let's do this{challengeData.userName && challengeData.userName !== 'User' ? `, ${challengeData.userName}` : ''}! 💪
               </Text>
             </Box>
           </VStack>
