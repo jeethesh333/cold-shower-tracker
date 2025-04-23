@@ -6,6 +6,8 @@ import ErrorBoundary from './components/ErrorBoundary'
 import MusicPlayer from './components/MusicPlayer'
 import { validateChallengeData, sanitizeChallengeData } from './utils/validation'
 import { ChallengeData } from './types'
+import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/react"
 import './styles/calendar.css'
 
 function App() {
@@ -161,6 +163,8 @@ function App() {
             Saving...
           </Box>
         )}
+        <Analytics />
+        <SpeedInsights />
       </Box>
     </ErrorBoundary>
   )
