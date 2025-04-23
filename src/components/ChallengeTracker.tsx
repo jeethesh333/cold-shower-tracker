@@ -73,7 +73,8 @@ const motivationalQuotes = [
   { text: "Do hard things, get strong results", author: "Anonymous" },
   { text: "Challenge yourself every single day", author: "Anonymous" },
   { text: "Discomfort today, strength tomorrow", author: "Anonymous" },
-  { text: "Push your limits, find your strength", author: "Anonymous" }
+  { text: "Push your limits, find your strength", author: "Anonymous" },
+  { text: "You did not come this far to only come this far", author: "Unknown" }
 ]
 
 const getLevelInfo = (progress: number) => {
